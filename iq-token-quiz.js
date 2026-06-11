@@ -15,6 +15,8 @@ const FALLBACK_TOKENS = [
   { name: "The Graph", symbol: "GRT", icon: "grt", wiki: "the-graph", category: "Infrastructure", hint: "An indexing protocol for blockchain data" },
   { name: "Basic Attention Token", symbol: "BAT", icon: "bat", wiki: "basic-attention-token", category: "Web3", hint: "A token for the digital advertising ecosystem" },
 ];
+const TOKEN_POOL_SIZE = 500;
+const RANKING_PAGES_TO_LOAD = 40;
 
 const DIFFICULTIES = {
   easy: { label: "Easy", detail: "Full logo · 4 choices · 15 seconds", choices: 4, points: 100, seconds: 15 },
@@ -286,10 +288,23 @@ class IqTokenQuiz extends HTMLElement {
 
   async loadTokens() {
     try {
-      const response = await fetch("https://iq.wiki/rank/cryptocurrencies");
-      if (!response.ok) throw new Error(`IQ.wiki returned ${response.status}`);
-      const tokens = this.parseRankedTokens(await response.text());
-      if (tokens.length < 6) throw new Error("Too few ranked tokens found");
+      const pages = await Promise.all(
+        Array.from({ length: RANKING_PAGES_TO_LOAD }, async (_, index) => {
+          const response = await fetch(`https://iq.wiki/rank/cryptocurrencies?page=${index + 1}`);
+          if (!response.ok) throw new Error(`IQ.wiki returned ${response.status}`);
+          return this.parseRankedTokens(await response.text());
+        }),
+      );
+      const seen = new Set();
+      const tokens = pages
+        .flat()
+        .filter((token) => {
+          if (seen.has(token.wiki)) return false;
+          seen.add(token.wiki);
+          return true;
+        })
+        .slice(0, TOKEN_POOL_SIZE);
+      if (tokens.length < TOKEN_POOL_SIZE) throw new Error("Too few ranked tokens found");
       this.tokens = tokens;
       this.dataSource = "live";
       if (this.onStartScreen) this.renderStart();

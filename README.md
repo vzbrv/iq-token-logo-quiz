@@ -18,7 +18,7 @@ The component emits:
 - `token-quiz-answer` with `{ correct, token, difficulty, score }`
 - `token-quiz-complete` with `{ score, levels, difficulty }`
 
-The game loads its live token pool from IQ.wiki's cryptocurrency rankings, using projects that have IQ.wiki pages. Their IQ.wiki slugs, names, tickers, and logos power the questions and review links.
+The game loads a live pool of 500 projects from IQ.wiki's cryptocurrency rankings, using projects that have IQ.wiki pages. Their IQ.wiki slugs, names, tickers, and logos power the questions and review links.
 
 When the rankings page is unavailable, such as on a cross-domain GitHub Pages preview, the game uses a small built-in fallback pool.
 
