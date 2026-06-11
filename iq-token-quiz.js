@@ -313,6 +313,7 @@ class IqTokenQuiz extends HTMLElement {
     this.responseTimes = [];
     this.timer = null;
     this.answered = false;
+    this.endedByTimeout = false;
     this.lifelines = { fifty: true, clue: true };
     this.tokens = FALLBACK_TOKENS;
     this.dataSource = "preview";
@@ -360,6 +361,7 @@ class IqTokenQuiz extends HTMLElement {
     this.bestStreak = 0;
     this.missed = [];
     this.responseTimes = [];
+    this.endedByTimeout = false;
     this.lifelines = { fifty: true, clue: true };
     this.onStartScreen = false;
     this.deck = this.shuffle(this.tokens);
@@ -582,12 +584,16 @@ class IqTokenQuiz extends HTMLElement {
       ? `<strong>Correct${this.streak > 1 ? ` · ${this.streak} answer streak` : ""}.</strong> That is ${answer.name} (${answer.symbol}).`
       : `<strong>${timedOut ? "Time is up." : "Not quite."} That is ${answer.name} (${answer.symbol}).</strong>
          <a href="https://iq.wiki/wiki/${answer.wiki}" target="_blank" rel="noopener noreferrer">Learn about ${answer.name} on IQ.wiki →</a>`;
-    this.shadowRoot.querySelector(".next").hidden = false;
+    this.shadowRoot.querySelector(".next").hidden = timedOut;
 
     this.dispatchEvent(new CustomEvent("token-quiz-answer", {
       bubbles: true,
       detail: { correct, token: answer.symbol, difficulty: this.difficulty, score: this.score },
     }));
+    if (timedOut) {
+      this.endedByTimeout = true;
+      this.renderResult();
+    }
   }
 
   next() {
@@ -613,14 +619,16 @@ class IqTokenQuiz extends HTMLElement {
     const best = Math.max(previousBest, this.score);
     localStorage.setItem(storageKey, best);
     const rank = percentage >= 90 ? "Logo Oracle" : percentage >= 70 ? "Chain Spotter" : percentage >= 40 ? "Wiki Scout" : "Crypto Curious";
-    const title = percentage >= 90 ? "You know the ecosystem." : percentage >= 60 ? "Your logo game is strong." : "More wikis. More power.";
+    const title = this.endedByTimeout
+      ? "Time's up. Run over."
+      : percentage >= 90 ? "You know the ecosystem." : percentage >= 60 ? "Your logo game is strong." : "More wikis. More power.";
 
     this.shadowRoot.innerHTML = `
       <style>${styles}</style>
       <section class="quiz" aria-label="Token logo quiz result">
         <div class="result">
           <div class="rank">${rank}</div>
-          <p class="eyebrow">${DIFFICULTIES[this.difficulty].label} run complete</p>
+          <p class="eyebrow">${DIFFICULTIES[this.difficulty].label} run ${this.endedByTimeout ? "timed out" : "complete"}</p>
           <div class="big">${this.score}</div>
           <h2>${title}</h2>
           <p class="sub">${this.correctAnswers} of ${levelsPlayed} correct · ${percentage}% accuracy · Personal best ${best}</p>
