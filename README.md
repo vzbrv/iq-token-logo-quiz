@@ -18,7 +18,9 @@ The component emits:
 - `token-quiz-answer` with `{ correct, token, difficulty, score }`
 - `token-quiz-complete` with `{ score, levels, difficulty }`
 
-Token icons load from the `cryptocurrency-icons` package on jsDelivr. Replace the icon URLs with IQ.wiki-hosted assets before production if avoiding an external dependency is required.
+The game loads its live token pool from IQ.wiki's cryptocurrency rankings, using projects that have IQ.wiki pages. Their IQ.wiki slugs, names, tickers, and logos power the questions and review links.
+
+When the rankings page is unavailable, such as on a cross-domain GitHub Pages preview, the game uses a small built-in fallback pool.
 
 ## Preview
 

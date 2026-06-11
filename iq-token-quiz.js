@@ -1,4 +1,4 @@
-const TOKENS = [
+const FALLBACK_TOKENS = [
   { name: "Bitcoin", symbol: "BTC", icon: "btc", wiki: "bitcoin", category: "Payments", hint: "The original proof-of-work cryptocurrency" },
   { name: "Ethereum", symbol: "ETH", icon: "eth", wiki: "ethereum", category: "Layer 1", hint: "Home of the EVM and smart contracts" },
   { name: "Solana", symbol: "SOL", icon: "sol", wiki: "solana", category: "Layer 1", hint: "A high-throughput layer 1 blockchain" },
@@ -266,10 +266,14 @@ class IqTokenQuiz extends HTMLElement {
     this.timer = null;
     this.answered = false;
     this.lifelines = { fifty: true, clue: true };
+    this.tokens = FALLBACK_TOKENS;
+    this.dataSource = "preview";
+    this.onStartScreen = false;
   }
 
   connectedCallback() {
     this.renderStart();
+    this.loadTokens();
   }
 
   disconnectedCallback() {
@@ -278,6 +282,48 @@ class IqTokenQuiz extends HTMLElement {
 
   shuffle(items) {
     return [...items].sort(() => Math.random() - 0.5);
+  }
+
+  async loadTokens() {
+    try {
+      const response = await fetch("https://iq.wiki/rank/cryptocurrencies");
+      if (!response.ok) throw new Error(`IQ.wiki returned ${response.status}`);
+      const tokens = this.parseRankedTokens(await response.text());
+      if (tokens.length < 6) throw new Error("Too few ranked tokens found");
+      this.tokens = tokens;
+      this.dataSource = "live";
+      if (this.onStartScreen) this.renderStart();
+    } catch {
+      this.tokens = FALLBACK_TOKENS;
+      this.dataSource = "preview";
+    }
+  }
+
+  parseRankedTokens(html) {
+    const tokens = [];
+    const seen = new Set();
+    const pattern = /\\"ranking\\":\d+,\\"id\\":\\"([^"]+)\\"[\s\S]*?\\"tokenMarketData\\":\{\\"hasWiki\\":true,\\"image\\":\\"([^"]+)\\"[\s\S]*?\\"name\\":\\"([^"]+)\\"[\s\S]*?\\"alias\\":\\"([^"]+)\\"/g;
+    let match;
+    while ((match = pattern.exec(html))) {
+      const [wiki, image, name, alias] = match.slice(1).map((value) => value.replaceAll("\\u0026", "&").replaceAll("\\/", "/"));
+      const symbol = alias.toUpperCase();
+      if (!seen.has(symbol)) {
+        seen.add(symbol);
+        tokens.push({
+          name,
+          symbol,
+          image,
+          wiki,
+          category: "IQ.wiki ranked project",
+          hint: `${name} has a wiki in IQ.wiki's cryptocurrency rankings`,
+        });
+      }
+    }
+    return tokens;
+  }
+
+  imageUrl(token) {
+    return token.image || `https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/${token.icon}.svg`;
   }
 
   start() {
@@ -290,12 +336,14 @@ class IqTokenQuiz extends HTMLElement {
     this.missed = [];
     this.responseTimes = [];
     this.lifelines = { fifty: true, clue: true };
-    this.deck = this.shuffle(TOKENS);
+    this.onStartScreen = false;
+    this.deck = this.shuffle(this.tokens);
     this.renderQuestion();
   }
 
   renderStart() {
     this.stopTimer();
+    this.onStartScreen = true;
     this.shadowRoot.innerHTML = `
       <style>${styles}</style>
       <section class="quiz" aria-label="Choose token logo quiz difficulty">
@@ -303,6 +351,7 @@ class IqTokenQuiz extends HTMLElement {
           <p class="eyebrow">IQ.wiki Token Logo Quiz</p>
           <h2>Choose your difficulty</h2>
           <p class="sub">Climb through ${this.maxLevels} levels. Every 10 levels gets faster.</p>
+          <p class="sub">${this.dataSource === "live" ? "Live IQ.wiki pool" : "Built-in preview pool"}: ${this.tokens.length} tokens.</p>
           <div class="levels">
             ${Object.entries(DIFFICULTIES).map(([key, level]) => `
               <button class="level" data-level="${key}">
@@ -323,14 +372,14 @@ class IqTokenQuiz extends HTMLElement {
   }
 
   getChoices(answer) {
-    const others = this.shuffle(TOKENS.filter((token) => token.symbol !== answer.symbol))
+    const others = this.shuffle(this.tokens.filter((token) => token.symbol !== answer.symbol))
       .slice(0, DIFFICULTIES[this.difficulty].choices - 1);
     return this.shuffle([answer, ...others]);
   }
 
   getAnswer() {
-    if (this.question > 0 && this.question % TOKENS.length === 0) this.deck = this.shuffle(TOKENS);
-    return this.deck[this.question % TOKENS.length];
+    if (this.question > 0 && this.question % this.tokens.length === 0) this.deck = this.shuffle(this.tokens);
+    return this.deck[this.question % this.tokens.length];
   }
 
   getSeconds() {
@@ -360,7 +409,7 @@ class IqTokenQuiz extends HTMLElement {
         <div class="timer"><strong data-time>${seconds}s</strong><div class="timer-track"><span data-timebar style="width:100%"></span></div></div>
         <div class="logo-wrap">
           <div class="logo-window ${this.difficulty}">
-            <img src="https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.18.1/svg/color/${answer.icon}.svg" alt="Mystery token logo" style="--crop-x:${cropX}px;--crop-y:${cropY}px">
+            <img src="${this.imageUrl(answer)}" alt="Mystery token logo" style="--crop-x:${cropX}px;--crop-y:${cropY}px">
             <span class="logo-fallback">?</span>
           </div>
         </div>
@@ -499,6 +548,7 @@ class IqTokenQuiz extends HTMLElement {
 
   renderResult() {
     this.stopTimer();
+    this.onStartScreen = false;
     const levelsPlayed = this.responseTimes.length;
     const maxBaseScore = levelsPlayed * DIFFICULTIES[this.difficulty].points;
     const percentage = levelsPlayed ? Math.round((this.correctAnswers / levelsPlayed) * 100) : 0;
