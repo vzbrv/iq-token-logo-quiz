@@ -16,6 +16,7 @@ const FALLBACK_TOKENS = [
   { name: "Basic Attention Token", symbol: "BAT", icon: "bat", wiki: "basic-attention-token", category: "Web3", hint: "A token for the digital advertising ecosystem" },
 ];
 const TOKEN_POOL_SIZE = 500;
+const LIFELINE_COST = 50;
 const TOKEN_DATA_URL = new URL("tokens.json", document.currentScript?.src || window.location.href).href;
 
 const DIFFICULTIES = {
@@ -456,8 +457,8 @@ class IqTokenQuiz extends HTMLElement {
         <h2>Which token is this?</h2>
         <p class="sub">Use keys 1–${choices.length}, or trust your cursor.</p>
         <div class="tools">
-          <button class="tool" data-fifty>50:50</button>
-          ${this.difficulty === "easy" ? "" : '<button class="tool" data-clue>Logo glimpse (-50)</button>'}
+          <button class="tool" data-fifty ${!this.lifelines.fifty || this.score < LIFELINE_COST ? `disabled title="${this.lifelines.fifty ? "Earn 50 points to unlock" : "Available again next stage"}"` : ""}>50:50 (-50)</button>
+          ${this.difficulty === "easy" ? "" : `<button class="tool" data-clue ${!this.lifelines.clue || this.score < LIFELINE_COST ? `disabled title="${this.lifelines.clue ? "Earn 50 points to unlock" : "Available again next stage"}"` : ""}>Logo glimpse (-50)</button>`}
         </div>
         <div class="clue" data-cluebox hidden></div>
         <div class="choices">
@@ -517,8 +518,10 @@ class IqTokenQuiz extends HTMLElement {
   }
 
   useFifty(answer) {
-    if (!this.lifelines.fifty || this.answered) return;
+    if (!this.lifelines.fifty || this.answered || this.score < LIFELINE_COST) return;
     this.lifelines.fifty = false;
+    this.score -= LIFELINE_COST;
+    this.shadowRoot.querySelector(".score").textContent = this.score;
     const wrong = this.shuffle([...this.shadowRoot.querySelectorAll(".choice")]
       .filter((button) => button.dataset.symbol !== answer.symbol));
     wrong.slice(0, Math.max(0, wrong.length - 1)).forEach((button) => button.classList.add("removed"));
@@ -532,17 +535,19 @@ class IqTokenQuiz extends HTMLElement {
   }
 
   useClue(answer) {
-    if (!this.lifelines.clue || this.answered) return;
+    if (!this.lifelines.clue || this.answered || this.score < LIFELINE_COST) return;
     this.lifelines.clue = false;
-    this.score = Math.max(0, this.score - 50);
+    this.score -= LIFELINE_COST;
     this.shadowRoot.querySelector(".score").textContent = this.score;
     this.shadowRoot.querySelector("[data-clue]").disabled = true;
-    const logo = this.shadowRoot.querySelector(".logo-window");
-    logo.classList.add("glimpse");
-    setTimeout(() => logo?.isConnected && logo.classList.remove("glimpse"), 1600);
     const clue = this.shadowRoot.querySelector("[data-cluebox]");
     clue.textContent = `Full logo revealed briefly · ${this.getHint(answer)}`;
     clue.hidden = false;
+    const logo = this.shadowRoot.querySelector(".logo-window");
+    logo.classList.remove("glimpse");
+    void logo.offsetWidth;
+    logo.classList.add("glimpse");
+    setTimeout(() => logo?.isConnected && logo.classList.remove("glimpse"), 1600);
   }
 
   answer(selected, answer, timedOut = false) {
