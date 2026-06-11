@@ -295,6 +295,21 @@ const styles = `
   .review a { display: inline-block; margin: 4px 7px 4px 0; color: var(--iq-pink-dark); font-size: 12px; font-weight: 800; text-decoration: none; }
   .result-actions { align-items: stretch; }
   .result-actions button { flex: 1; }
+  .share-label { margin: 18px 0 8px; color: var(--iq-muted); font-size: 10px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+  .share-links { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-bottom: 10px; }
+  .share-link {
+    padding: 11px 6px;
+    border: 1px solid var(--iq-border);
+    border-radius: 12px;
+    background: #fff;
+    color: var(--iq-ink);
+    font-size: 11px;
+    font-weight: 900;
+    text-align: center;
+    text-decoration: none;
+    transition: border-color .15s ease, color .15s ease, transform .15s ease;
+  }
+  .share-link:hover { border-color: var(--iq-pink); color: var(--iq-pink-dark); transform: translateY(-2px); }
   .start { padding-top: 2px; text-align: center; }
   .start h2 { max-width: 440px; margin: 16px auto 9px; font-size: 40px; }
   .start .sub { max-width: 450px; margin: 0 auto 22px; }
@@ -347,6 +362,7 @@ const styles = `
     .choices { grid-template-columns: 1fr; }
     .logo-wrap { height: 190px; border-radius: 18px; }
     .result-actions { flex-direction: column; }
+    .share-links { grid-template-columns: repeat(2, 1fr); }
     .result-hero { grid-template-columns: 92px 1fr; gap: 12px; }
     .accuracy-ring { width: 92px; height: 92px; box-shadow: inset 0 0 0 10px #fff; }
   }
@@ -760,6 +776,9 @@ class IqTokenQuiz extends HTMLElement {
     const title = this.endedByTimeout
       ? "Time's up. Run over."
       : percentage >= 90 ? "You know the ecosystem." : percentage >= 60 ? "Your logo game is strong." : "More wikis. More power.";
+    const shareText = this.getShareText(percentage);
+    const shareUrl = encodeURIComponent(location.href);
+    const encodedShareText = encodeURIComponent(shareText);
 
     this.shadowRoot.innerHTML = `
       <style>${styles}</style>
@@ -782,8 +801,15 @@ class IqTokenQuiz extends HTMLElement {
           </div>
           ${this.missed.length ? `<div class="review"><strong>Review missed tokens on IQ.wiki</strong>${this.missed.map((token) => `<a href="https://iq.wiki/wiki/${token.wiki}" target="_blank" rel="noopener noreferrer">${token.name} →</a>`).join("")}</div>` : ""}
           <p class="sub">Fast answers and streaks can push your score above ${maxBaseScore}.</p>
+          <p class="share-label">Challenge your friends</p>
+          <div class="share-links">
+            <a class="share-link" href="https://twitter.com/intent/tweet?text=${encodedShareText}&url=${shareUrl}" target="_blank" rel="noopener noreferrer">X</a>
+            <a class="share-link" href="https://t.me/share/url?url=${shareUrl}&text=${encodedShareText}" target="_blank" rel="noopener noreferrer">Telegram</a>
+            <a class="share-link" href="https://wa.me/?text=${encodedShareText}%20${shareUrl}" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+            <button class="share-link copy-share">Copy link</button>
+          </div>
           <div class="result-actions">
-            <button class="share">Challenge friends · ${this.score} pts</button>
+            <button class="share">More sharing options</button>
             <button class="restart">Play again</button>
           </div>
           <button class="restart secondary">Change mode</button>
@@ -794,15 +820,30 @@ class IqTokenQuiz extends HTMLElement {
     restart.addEventListener("click", () => this.start());
     change.addEventListener("click", () => this.renderStart());
     this.shadowRoot.querySelector(".share").addEventListener("click", () => this.shareResult(rank, percentage));
+    this.shadowRoot.querySelector(".copy-share").addEventListener("click", () => this.copyChallenge(percentage));
     this.dispatchEvent(new CustomEvent("token-quiz-complete", {
       bubbles: true,
       detail: { score: this.score, levels: levelsPlayed, difficulty: this.difficulty, category: this.category },
     }));
   }
 
-  async shareResult(rank, percentage) {
+  getShareText(percentage) {
     const grid = this.answerHistory.slice(-10).map((correct) => correct ? "🟩" : "🟥").join("");
-    const text = `I reached Level ${this.responseTimes.length} in ${this.category} · ${DIFFICULTIES[this.difficulty].label} and scored ${this.score} points in the IQ.wiki Token Logo Quiz (${percentage}% accuracy).\n${grid}\nThink you can beat me?`;
+    return `I reached Level ${this.responseTimes.length} in ${this.category} · ${DIFFICULTIES[this.difficulty].label} and scored ${this.score} points in the IQ.wiki Token Logo Quiz (${percentage}% accuracy).\n${grid}\nCan you beat my score?`;
+  }
+
+  async copyChallenge(percentage) {
+    const button = this.shadowRoot.querySelector(".copy-share");
+    try {
+      await navigator.clipboard.writeText(`${this.getShareText(percentage)}\n${location.href}`);
+      button.textContent = "Copied";
+    } catch {
+      button.textContent = "Copy unavailable";
+    }
+  }
+
+  async shareResult(rank, percentage) {
+    const text = this.getShareText(percentage);
     if (navigator.share) {
       try {
         await navigator.share({ title: "IQ.wiki Token Logo Quiz", text, url: location.href });
