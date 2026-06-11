@@ -4,6 +4,8 @@ Dependency-free Web Component for embedding a token logo quiz on IQ.wiki.
 
 Includes Easy, Medium, and Hard timed modes with Quick 5, Sprint 10, Gauntlet 25, and up-to-999-level Endless runs. Every 10-level stage gets faster and refreshes the lifelines. Players earn speed and streak bonuses, share challenges, save high scores, and review missed projects on IQ.wiki.
 
+The bundled `tokens.json` keeps the full 500-project game available without relying on cross-site browser requests.
+
 ## Embed
 
 ```html

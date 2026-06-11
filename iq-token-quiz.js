@@ -16,7 +16,7 @@ const FALLBACK_TOKENS = [
   { name: "Basic Attention Token", symbol: "BAT", icon: "bat", wiki: "basic-attention-token", category: "Web3", hint: "A token for the digital advertising ecosystem" },
 ];
 const TOKEN_POOL_SIZE = 500;
-const RANKING_PAGES_TO_LOAD = 40;
+const TOKEN_DATA_URL = new URL("tokens.json", document.currentScript?.src || window.location.href).href;
 
 const DIFFICULTIES = {
   easy: { label: "Easy", detail: "Full logo · 4 choices · 15 seconds", choices: 4, points: 100, seconds: 15 },
@@ -326,53 +326,17 @@ class IqTokenQuiz extends HTMLElement {
 
   async loadTokens() {
     try {
-      const pages = await Promise.all(
-        Array.from({ length: RANKING_PAGES_TO_LOAD }, async (_, index) => {
-          const response = await fetch(`https://iq.wiki/rank/cryptocurrencies?page=${index + 1}`);
-          if (!response.ok) throw new Error(`IQ.wiki returned ${response.status}`);
-          return this.parseRankedTokens(await response.text());
-        }),
-      );
-      const seen = new Set();
-      const tokens = pages
-        .flat()
-        .filter((token) => {
-          if (seen.has(token.wiki)) return false;
-          seen.add(token.wiki);
-          return true;
-        })
-        .slice(0, TOKEN_POOL_SIZE);
+      const response = await fetch(TOKEN_DATA_URL);
+      if (!response.ok) throw new Error(`Token data returned ${response.status}`);
+      const tokens = await response.json();
       if (tokens.length < TOKEN_POOL_SIZE) throw new Error("Too few ranked tokens found");
-      this.tokens = tokens;
+      this.tokens = tokens.slice(0, TOKEN_POOL_SIZE);
       this.dataSource = "live";
       if (this.onStartScreen) this.renderStart();
     } catch {
       this.tokens = FALLBACK_TOKENS;
       this.dataSource = "preview";
     }
-  }
-
-  parseRankedTokens(html) {
-    const tokens = [];
-    const seen = new Set();
-    const pattern = /\\"ranking\\":\d+,\\"id\\":\\"([^"]+)\\"[\s\S]*?\\"tokenMarketData\\":\{\\"hasWiki\\":true,\\"image\\":\\"([^"]+)\\"[\s\S]*?\\"name\\":\\"([^"]+)\\"[\s\S]*?\\"alias\\":\\"([^"]+)\\"/g;
-    let match;
-    while ((match = pattern.exec(html))) {
-      const [wiki, image, name, alias] = match.slice(1).map((value) => value.replaceAll("\\u0026", "&").replaceAll("\\/", "/"));
-      const symbol = alias.toUpperCase();
-      if (!seen.has(symbol)) {
-        seen.add(symbol);
-        tokens.push({
-          name,
-          symbol,
-          image,
-          wiki,
-          category: "IQ.wiki ranked project",
-          hint: `${name} has a wiki in IQ.wiki's cryptocurrency rankings`,
-        });
-      }
-    }
-    return tokens;
   }
 
   imageUrl(token) {
