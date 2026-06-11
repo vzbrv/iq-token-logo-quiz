@@ -2,7 +2,7 @@
 
 Dependency-free Web Component for embedding a token logo quiz on IQ.wiki.
 
-Includes Easy, Medium, and Hard timed modes with up to 999 levels. Every 10-level stage gets faster and refreshes the lifelines. Players earn speed and streak bonuses, save high scores, and review missed projects on IQ.wiki.
+Includes Easy, Medium, and Hard timed modes with Quick 5, Sprint 10, Gauntlet 25, and up-to-999-level Endless runs. Every 10-level stage gets faster and refreshes the lifelines. Players earn speed and streak bonuses, share challenges, save high scores, and review missed projects on IQ.wiki.
 
 ## Embed
 
@@ -18,7 +18,9 @@ The component emits:
 - `token-quiz-answer` with `{ correct, token, difficulty, score }`
 - `token-quiz-complete` with `{ score, levels, difficulty }`
 
-Token icons load from the `cryptocurrency-icons` package on jsDelivr. Replace the icon URLs with IQ.wiki-hosted assets before production if avoiding an external dependency is required.
+The game loads a live pool of 500 projects from IQ.wiki's cryptocurrency rankings, using projects that have IQ.wiki pages. Their IQ.wiki slugs, names, tickers, and logos power the questions and review links.
+
+When the rankings page is unavailable, such as on a cross-domain GitHub Pages preview, the game uses a small built-in fallback pool.
 
 ## Preview
 
