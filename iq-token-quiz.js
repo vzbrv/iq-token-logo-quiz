@@ -27,14 +27,14 @@ const DIFFICULTIES = {
 const styles = `
   :host {
     --iq-pink: #ff5ca8;
-    --iq-pink-dark: #d92f7d;
-    --iq-pink-soft: #fff5fa;
-    --iq-ink: #161616;
-    --iq-muted: #707070;
-    --iq-border: #e7e7e7;
-    --iq-bg: #f7f7f7;
+    --iq-pink-dark: #e23888;
+    --iq-pink-soft: #ffe1ef;
+    --iq-ink: #15111e;
+    --iq-muted: #756e80;
+    --iq-border: #ded8e5;
+    --iq-bg: #f7f3fa;
     display: block;
-    max-width: 460px;
+    max-width: 620px;
     color: var(--iq-ink);
     font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   }
@@ -44,14 +44,29 @@ const styles = `
   .quiz {
     position: relative;
     overflow: hidden;
-    padding: 22px;
-    border: 1px solid var(--iq-border);
-    border-radius: 16px;
+    padding: 26px;
+    border: 1px solid rgba(255,255,255,.75);
+    border-radius: 28px;
     background: #fff;
-    box-shadow: 0 10px 32px rgba(0, 0, 0, .06);
+    box-shadow: 0 26px 80px rgba(44, 25, 56, .16);
   }
 
-  .top, .meta, .actions, .result-top {
+  .quiz::before {
+    position: absolute;
+    z-index: 0;
+    width: 210px;
+    height: 210px;
+    border-radius: 50%;
+    background: var(--iq-pink);
+    content: "";
+    filter: blur(95px);
+    opacity: .12;
+    right: -110px;
+    top: -100px;
+  }
+
+  .quiz > * { position: relative; z-index: 1; }
+  .top, .result-actions {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -61,89 +76,89 @@ const styles = `
   .eyebrow {
     margin: 0;
     color: var(--iq-pink-dark);
-    font-size: 12px;
-    font-weight: 800;
-    letter-spacing: .09em;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: .12em;
     text-transform: uppercase;
   }
 
-  .score {
-    padding: 7px 11px;
+  .live {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 10px;
+    border: 1px solid var(--iq-border);
     border-radius: 999px;
-    background: var(--iq-pink-soft);
-    color: var(--iq-pink-dark);
-    font-size: 13px;
+    color: var(--iq-muted);
+    font-size: 11px;
     font-weight: 800;
   }
+  .live::before { width: 7px; height: 7px; border-radius: 50%; background: #36c586; content: ""; box-shadow: 0 0 0 4px #daf7ea; }
 
-  .level-count { margin-top: 4px; color: var(--iq-muted); font-size: 11px; font-weight: 800; text-align: right; }
+  .hud { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 18px 0 12px; }
+  .hud-item { padding: 10px 12px; border: 1px solid var(--iq-border); border-radius: 13px; background: rgba(255,255,255,.84); }
+  .hud-item strong, .hud-item span { display: block; }
+  .hud-item strong { font-size: 17px; letter-spacing: -.03em; }
+  .hud-item span { margin-top: 2px; color: var(--iq-muted); font-size: 9px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
 
-  .progress {
-    height: 5px;
-    margin: 16px 0 20px;
-    overflow: hidden;
-    border-radius: 99px;
-    background: #eeeeee;
-  }
-
-  .progress span {
-    display: block;
-    width: 10%;
-    height: 100%;
-    border-radius: inherit;
-    background: var(--iq-pink);
-    transition: width .3s ease;
-  }
-
-  .timer { display: flex; align-items: center; gap: 9px; margin: -10px 0 17px; color: var(--iq-pink-dark); font-size: 12px; font-weight: 800; }
-  .timer-track { height: 5px; flex: 1; overflow: hidden; border-radius: 99px; background: #eeeeee; }
+  .timer { display: flex; align-items: center; gap: 9px; margin-bottom: 13px; color: var(--iq-pink-dark); font-size: 11px; font-weight: 900; }
+  .timer-track { height: 6px; flex: 1; overflow: hidden; border-radius: 99px; background: #eee9f1; }
   .timer-track span { display: block; height: 100%; background: var(--iq-pink); transition: width .1s linear; }
   .timer.danger { color: #b53131; }
   .timer.danger .timer-track span { background: #dc5b5b; }
 
   .logo-wrap {
+    position: relative;
     display: grid;
-    width: 148px;
-    height: 148px;
-    margin: 0 auto 18px;
+    width: 100%;
+    height: 226px;
+    margin: 0 auto 20px;
+    overflow: hidden;
     place-items: center;
-    border: 1px solid var(--iq-border);
     border-radius: 24px;
-    background: var(--iq-bg);
+    background: radial-gradient(circle at center, #30253b 0 2px, transparent 3px), radial-gradient(circle at center, #241b2e 0 28%, #18121f 72%);
+    background-size: 24px 24px, auto;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.09);
   }
-
-  .logo-wrap img {
-    width: 86px;
-    height: 86px;
-    object-fit: contain;
+  .logo-wrap::before, .logo-wrap::after {
+    position: absolute;
+    width: 180px;
+    height: 180px;
+    border: 1px solid rgba(255,92,168,.25);
+    border-radius: 50%;
+    content: "";
+    animation: orbit 9s linear infinite;
+  }
+  .logo-wrap::after { width: 130px; height: 130px; border-style: dashed; animation-direction: reverse; animation-duration: 12s; }
+  .logo-window {
+    z-index: 1;
+    filter: drop-shadow(0 14px 22px rgba(0,0,0,.35));
   }
 
   .logo-fallback {
     display: none;
-    color: var(--iq-pink);
-    font-size: 34px;
+    color: #fff;
+    font-size: 48px;
     font-weight: 900;
   }
 
   h2 {
     margin: 0 0 5px;
     text-align: center;
-    font-size: 24px;
-    line-height: 1.2;
-    letter-spacing: -.04em;
+    font-size: 30px;
+    line-height: 1.05;
+    letter-spacing: -.055em;
   }
 
   .sub {
-    margin: 0 0 18px;
+    margin: 0 0 20px;
     color: var(--iq-muted);
     text-align: center;
     font-size: 14px;
+    line-height: 1.5;
   }
 
-  .choices {
-    display: grid;
-    gap: 9px;
-  }
+  .choices { display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px; }
 
   button {
     border: 0;
@@ -152,38 +167,44 @@ const styles = `
   }
 
   .choice {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     width: 100%;
-    padding: 13px 14px;
+    min-height: 58px;
+    padding: 11px 12px;
     border: 1px solid var(--iq-border);
-    border-radius: 10px;
+    border-radius: 14px;
     background: #fff;
     color: var(--iq-ink);
     text-align: left;
-    font-size: 14px;
-    font-weight: 700;
-    transition: border-color .15s ease, background .15s ease, transform .15s ease;
+    font-size: 13px;
+    font-weight: 800;
+    transition: border-color .15s ease, background .15s ease, transform .15s ease, box-shadow .15s ease;
   }
 
   .choice:hover:not(:disabled) {
-    transform: translateY(-1px);
+    transform: translateY(-2px);
     border-color: var(--iq-pink);
     background: var(--iq-pink-soft);
+    box-shadow: 0 8px 18px rgba(226,56,136,.12);
   }
-
+  .key { display: grid; width: 28px; height: 28px; flex: 0 0 28px; place-items: center; border-radius: 8px; background: var(--iq-bg); color: var(--iq-muted); font-size: 11px; }
+  .choice span:last-child { margin-left: auto; color: var(--iq-muted); font-size: 10px; }
   .choice.correct { border-color: #37b77b; background: #ecfbf4; color: #16724a; }
   .choice.wrong { border-color: #e97979; background: #fff1f1; color: #a53636; }
   .choice.removed { opacity: .12; pointer-events: none; }
   .choice:disabled { cursor: default; }
 
-  .tools { display: flex; gap: 8px; margin: 0 0 13px; }
-  .tool { flex: 1; padding: 9px; border-radius: 8px; background: var(--iq-pink-soft); color: var(--iq-pink-dark); font-size: 12px; font-weight: 800; }
+  .tools { display: flex; justify-content: center; gap: 8px; margin: 0 0 13px; }
+  .tool { padding: 8px 12px; border: 1px solid var(--iq-border); border-radius: 999px; background: #fff; color: var(--iq-pink-dark); font-size: 11px; font-weight: 900; }
   .tool:disabled { opacity: .4; cursor: default; }
-  .clue { margin-bottom: 13px; padding: 10px 12px; border-radius: 8px; background: var(--iq-pink-soft); color: var(--iq-pink-dark); font-size: 12px; font-weight: 700; }
+  .clue { margin-bottom: 13px; padding: 10px 12px; border-radius: 10px; background: var(--iq-pink-soft); color: var(--iq-pink-dark); font-size: 12px; font-weight: 800; }
   .clue[hidden] { display: none; }
 
   .feedback {
-    min-height: 42px;
-    margin-top: 13px;
+    min-height: 48px;
+    margin-top: 14px;
     color: var(--iq-muted);
     font-size: 13px;
     line-height: 1.4;
@@ -192,62 +213,78 @@ const styles = `
   .feedback strong { color: var(--iq-ink); }
   .feedback a { display: block; margin-top: 5px; color: var(--iq-pink-dark); font-weight: 800; text-decoration: none; }
 
-  .next, .restart {
+  .next, .restart, .start-button, .share {
     width: 100%;
-    padding: 13px 16px;
-    border-radius: 10px;
-    background: var(--iq-pink);
+    padding: 15px 16px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--iq-pink), var(--iq-pink-dark));
     color: #fff;
-    font-weight: 800;
+    font-weight: 900;
     transition: background .15s ease, transform .15s ease;
   }
 
-  .next:hover, .restart:hover { background: var(--iq-pink-dark); transform: translateY(-1px); }
+  .next:hover, .restart:hover, .start-button:hover, .share:hover { transform: translateY(-2px); }
   .next[hidden] { display: none; }
 
-  .result { padding: 34px 4px 8px; text-align: center; }
-  .result .big { margin: 12px 0 6px; font-size: 48px; font-weight: 900; letter-spacing: -.06em; }
-  .result h2 { font-size: 28px; }
+  .result { padding: 18px 4px 4px; text-align: center; }
+  .rank { display: inline-block; margin-bottom: 18px; padding: 8px 12px; border-radius: 999px; background: #211828; color: #fff; font-size: 11px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+  .result .big { margin: 8px 0 2px; font-size: 64px; font-weight: 950; letter-spacing: -.075em; }
+  .result h2 { font-size: 31px; }
   .result .sub { margin-bottom: 24px; }
-  .result-badge { font-size: 50px; }
   .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin: 18px 0; }
-  .stat { padding: 11px 4px; border-radius: 8px; background: var(--iq-bg); }
+  .stat { padding: 13px 4px; border-radius: 12px; background: var(--iq-bg); }
   .stat strong, .stat span { display: block; }
   .stat strong { color: var(--iq-pink-dark); font-size: 17px; }
-  .stat span { margin-top: 3px; color: var(--iq-muted); font-size: 10px; font-weight: 700; }
-  .review { margin: 16px 0; padding: 12px; border-radius: 8px; background: var(--iq-pink-soft); text-align: left; }
+  .stat span { margin-top: 3px; color: var(--iq-muted); font-size: 9px; font-weight: 900; text-transform: uppercase; }
+  .review { margin: 16px 0; padding: 13px; border-radius: 12px; background: var(--iq-pink-soft); text-align: left; }
   .review strong { display: block; margin-bottom: 6px; font-size: 13px; }
   .review a { display: inline-block; margin: 4px 7px 4px 0; color: var(--iq-pink-dark); font-size: 12px; font-weight: 800; text-decoration: none; }
-  .start { padding-top: 6px; text-align: center; }
-  .start h2 { margin-top: 10px; }
-  .levels { display: grid; gap: 9px; margin-top: 20px; }
-  .level {
+  .result-actions { align-items: stretch; }
+  .result-actions button { flex: 1; }
+  .start { padding-top: 2px; text-align: center; }
+  .start h2 { max-width: 440px; margin: 16px auto 9px; font-size: 40px; }
+  .start .sub { max-width: 450px; margin: 0 auto 22px; }
+  .section-label { margin: 18px 0 8px; color: var(--iq-muted); text-align: left; font-size: 10px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+  .levels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .level, .round {
     display: grid;
-    gap: 3px;
-    padding: 14px;
+    gap: 4px;
+    padding: 12px;
     border: 1px solid var(--iq-border);
-    border-radius: 10px;
+    border-radius: 13px;
     background: #fff;
     color: var(--iq-ink);
     text-align: left;
   }
-  .level:hover { border-color: var(--iq-pink); background: var(--iq-pink-soft); }
-  .level span, .level small { color: var(--iq-muted); }
+  .level:hover, .round:hover, .level.selected, .round.selected { border-color: var(--iq-pink); background: var(--iq-pink-soft); }
+  .level strong, .round strong { font-size: 13px; }
+  .level span, .level small, .round span { color: var(--iq-muted); font-size: 10px; line-height: 1.35; }
+  .rounds { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 18px; }
+  .round { text-align: center; }
+  .start-button { margin-top: 3px; }
   .logo-window { position: relative; display: grid; overflow: hidden; place-items: center; }
-  .logo-window.easy { width: 86px; height: 86px; }
-  .logo-window.medium { width: 60px; height: 60px; border-radius: 14px; }
-  .logo-window.hard { width: 38px; height: 38px; border-radius: 9px; }
+  .logo-window.easy { width: 104px; height: 104px; }
+  .logo-window.medium { width: 66px; height: 66px; border-radius: 15px; }
+  .logo-window.hard { width: 40px; height: 40px; border-radius: 9px; }
   .logo-window img { position: absolute; max-width: none; transform: translate(var(--crop-x), var(--crop-y)); }
-  .logo-window.easy img { width: 86px; height: 86px; }
-  .logo-window.medium img { top: 0; left: 0; width: 100px; height: 100px; }
-  .logo-window.hard img { top: 0; left: 0; width: 114px; height: 114px; }
+  .logo-window.easy img { width: 104px; height: 104px; }
+  .logo-window.medium img { top: 0; left: 0; width: 110px; height: 110px; }
+  .logo-window.hard img { top: 0; left: 0; width: 122px; height: 122px; }
   .secondary { margin-top: 8px; background: var(--iq-pink-soft); color: var(--iq-pink-dark); }
   .quit { width: 100%; margin-top: 9px; background: transparent; color: var(--iq-muted); font-size: 12px; font-weight: 800; }
+  @keyframes orbit { to { transform: rotate(360deg); } }
 
-  @media (max-width: 430px) {
-    .quiz { padding: 18px; border-radius: 14px; }
-    .logo-wrap { width: 126px; height: 126px; border-radius: 20px; }
-    .logo-window.easy, .logo-window.easy img { width: 72px; height: 72px; }
+  @media (max-width: 540px) {
+    .quiz { padding: 17px; border-radius: 20px; }
+    .start h2 { font-size: 32px; }
+    .levels { grid-template-columns: 1fr; }
+    .rounds { grid-template-columns: repeat(2, 1fr); }
+    .choices { grid-template-columns: 1fr; }
+    .logo-wrap { height: 190px; border-radius: 18px; }
+    .result-actions { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
   }
 `;
 
@@ -256,6 +293,7 @@ class IqTokenQuiz extends HTMLElement {
     super();
     this.attachShadow({ mode: "open" });
     this.maxLevels = Number(this.getAttribute("levels")) || 999;
+    this.runLength = Math.min(10, this.maxLevels);
     this.question = 0;
     this.score = 0;
     this.streak = 0;
@@ -363,27 +401,44 @@ class IqTokenQuiz extends HTMLElement {
       <style>${styles}</style>
       <section class="quiz" aria-label="Choose token logo quiz difficulty">
         <div class="start">
-          <p class="eyebrow">IQ.wiki Token Logo Quiz</p>
-          <h2>Choose your difficulty</h2>
-          <p class="sub">Climb through ${this.maxLevels} levels. Every 10 levels gets faster.</p>
-          <p class="sub">${this.dataSource === "live" ? "Live IQ.wiki pool" : "Built-in preview pool"}: ${this.tokens.length} tokens.</p>
+          <div class="top"><p class="eyebrow">IQ.wiki Token Logo Quiz</p><span class="live">${this.dataSource === "live" ? "Live" : "Preview"} · ${this.tokens.length} projects</span></div>
+          <h2>500 logos. How dialed in are you?</h2>
+          <p class="sub">Identify crypto projects before time runs out. Partial logos, faster stages, streak bonuses, and two lifelines stand between you and the leaderboard.</p>
+          <p class="section-label">Pick difficulty</p>
           <div class="levels">
             ${Object.entries(DIFFICULTIES).map(([key, level]) => `
-              <button class="level" data-level="${key}">
+              <button class="level ${this.difficulty === key ? "selected" : ""}" data-level="${key}">
                 <strong>${level.label}</strong>
                 <span>${level.detail}</span>
-                <small>${level.points} points per correct answer</small>
+                <small>Up to ${level.points}+ pts</small>
               </button>
             `).join("")}
           </div>
+          <p class="section-label">Pick your run</p>
+          <div class="rounds">
+            ${[
+              [5, "Quick 5", "Warm-up"],
+              [10, "Sprint 10", "Classic"],
+              [25, "Gauntlet", "Serious"],
+              [this.maxLevels, "Endless", `Up to ${this.maxLevels}`],
+            ].map(([value, label, detail]) => `<button class="round ${this.runLength === value ? "selected" : ""}" data-rounds="${value}"><strong>${label}</strong><span>${detail}</span></button>`).join("")}
+          </div>
+          <button class="start-button" data-start>Start ${DIFFICULTIES[this.difficulty].label} run →</button>
         </div>
       </section>`;
     this.shadowRoot.querySelectorAll(".level").forEach((button) => {
       button.addEventListener("click", () => {
         this.difficulty = button.dataset.level;
-        this.start();
+        this.renderStart();
       });
     });
+    this.shadowRoot.querySelectorAll(".round").forEach((button) => {
+      button.addEventListener("click", () => {
+        this.runLength = Number(button.dataset.rounds);
+        this.renderStart();
+      });
+    });
+    this.shadowRoot.querySelector("[data-start]").addEventListener("click", () => this.start());
   }
 
   getChoices(answer) {
@@ -414,12 +469,11 @@ class IqTokenQuiz extends HTMLElement {
     this.shadowRoot.innerHTML = `
       <style>${styles}</style>
       <section class="quiz" aria-label="Token logo quiz" tabindex="0">
-        <div class="top">
-          <p class="eyebrow">${DIFFICULTIES[this.difficulty].label} Token Logo Quiz</p>
-          <div><div class="score">${this.score} point${this.score === 1 ? "" : "s"}</div><div class="level-count">Level ${this.question + 1} / ${this.maxLevels}</div></div>
-        </div>
-        <div class="progress" aria-label="Stage progress ${stageLevel} of 10">
-          <span style="width:${stageLevel * 10}%"></span>
+        <div class="top"><p class="eyebrow">${DIFFICULTIES[this.difficulty].label} · Stage ${Math.floor(this.question / 10) + 1}</p><span class="live">Level ${this.question + 1} / ${this.runLength}</span></div>
+        <div class="hud">
+          <div class="hud-item"><strong class="score">${this.score}</strong><span>Score</span></div>
+          <div class="hud-item"><strong data-streak>${this.streak}×</strong><span>Streak</span></div>
+          <div class="hud-item"><strong>${stageLevel}/10</strong><span>Stage</span></div>
         </div>
         <div class="timer"><strong data-time>${seconds}s</strong><div class="timer-track"><span data-timebar style="width:100%"></span></div></div>
         <div class="logo-wrap">
@@ -429,17 +483,17 @@ class IqTokenQuiz extends HTMLElement {
           </div>
         </div>
         <h2>Which token is this?</h2>
-        <p class="sub">Level ${this.question + 1} · Stage ${Math.floor(this.question / 10) + 1}</p>
+        <p class="sub">Use keys 1–${choices.length}, or trust your cursor.</p>
         <div class="tools">
           <button class="tool" data-fifty>50:50</button>
           <button class="tool" data-clue>Reveal clue (-50)</button>
         </div>
         <div class="clue" data-cluebox hidden></div>
         <div class="choices">
-          ${choices.map((token, index) => `<button class="choice" data-symbol="${token.symbol}">${index + 1}. ${token.name} <span>(${token.symbol})</span></button>`).join("")}
+          ${choices.map((token, index) => `<button class="choice" data-symbol="${token.symbol}"><span class="key">${index + 1}</span>${token.name}<span>${token.symbol}</span></button>`).join("")}
         </div>
         <div class="feedback" aria-live="polite"></div>
-        <button class="next" hidden>${this.question + 1 === this.maxLevels ? "Finish run" : "Next level"}</button>
+        <button class="next" hidden>${this.question + 1 === this.runLength ? "See my result" : "Next logo →"}</button>
         <button class="quit">End run and see results</button>
       </section>
     `;
@@ -504,7 +558,7 @@ class IqTokenQuiz extends HTMLElement {
     if (!this.lifelines.clue || this.answered) return;
     this.lifelines.clue = false;
     this.score = Math.max(0, this.score - 50);
-    this.shadowRoot.querySelector(".score").textContent = `${this.score} points`;
+    this.shadowRoot.querySelector(".score").textContent = this.score;
     this.shadowRoot.querySelector("[data-clue]").disabled = true;
     const clue = this.shadowRoot.querySelector("[data-cluebox]");
     clue.textContent = `${answer.category}: ${answer.hint}.`;
@@ -537,7 +591,8 @@ class IqTokenQuiz extends HTMLElement {
       if (selected) selected.classList.add("wrong");
     }
 
-    this.shadowRoot.querySelector(".score").textContent = `${this.score} points`;
+    this.shadowRoot.querySelector(".score").textContent = this.score;
+    this.shadowRoot.querySelector("[data-streak]").textContent = `${this.streak}×`;
     this.shadowRoot.querySelector(".feedback").innerHTML = correct
       ? `<strong>Correct${this.streak > 1 ? ` · ${this.streak} answer streak` : ""}.</strong> ${answer.category} · ${answer.hint}.`
       : `<strong>${timedOut ? "Time is up." : `That is ${answer.name} (${answer.symbol}).`}</strong> ${answer.hint}.
@@ -553,7 +608,7 @@ class IqTokenQuiz extends HTMLElement {
   next() {
     this.stopTimer();
     this.question += 1;
-    if (this.question < this.maxLevels) {
+    if (this.question < this.runLength) {
       if (this.question % 10 === 0) this.lifelines = { fifty: true, clue: true };
       this.renderQuestion();
     } else {
@@ -572,18 +627,18 @@ class IqTokenQuiz extends HTMLElement {
     const previousBest = Number(localStorage.getItem(storageKey) || 0);
     const best = Math.max(previousBest, this.score);
     localStorage.setItem(storageKey, best);
-    const badge = percentage >= 100 ? "🏆" : percentage >= 60 ? "⚡" : "🧠";
-    const title = percentage >= 100 ? "Token expert" : percentage >= 60 ? "Strong crypto knowledge" : "Keep exploring";
+    const rank = percentage >= 90 ? "Logo Oracle" : percentage >= 70 ? "Chain Spotter" : percentage >= 40 ? "Wiki Scout" : "Crypto Curious";
+    const title = percentage >= 90 ? "You know the ecosystem." : percentage >= 60 ? "Your logo game is strong." : "More wikis. More power.";
 
     this.shadowRoot.innerHTML = `
       <style>${styles}</style>
       <section class="quiz" aria-label="Token logo quiz result">
         <div class="result">
-          <div class="result-badge">${badge}</div>
-          <p class="eyebrow">Quiz Complete</p>
+          <div class="rank">${rank}</div>
+          <p class="eyebrow">${DIFFICULTIES[this.difficulty].label} run complete</p>
           <div class="big">${this.score}</div>
           <h2>${title}</h2>
-          <p class="sub">${this.correctAnswers} of ${levelsPlayed} correct on ${DIFFICULTIES[this.difficulty].label}. Best score: ${best}.</p>
+          <p class="sub">${this.correctAnswers} of ${levelsPlayed} correct · ${percentage}% accuracy · Personal best ${best}</p>
           <div class="stats">
             <div class="stat"><strong>${levelsPlayed}</strong><span>Levels reached</span></div>
             <div class="stat"><strong>${this.bestStreak}</strong><span>Best streak</span></div>
@@ -591,18 +646,38 @@ class IqTokenQuiz extends HTMLElement {
           </div>
           ${this.missed.length ? `<div class="review"><strong>Review missed tokens on IQ.wiki</strong>${this.missed.map((token) => `<a href="https://iq.wiki/wiki/${token.wiki}" target="_blank" rel="noopener noreferrer">${token.name} →</a>`).join("")}</div>` : ""}
           <p class="sub">Fast answers and streaks can push your score above ${maxBaseScore}.</p>
-          <button class="restart">Play again</button>
-          <button class="restart secondary">Change difficulty</button>
+          <div class="result-actions">
+            <button class="share">Challenge a friend</button>
+            <button class="restart">Play again</button>
+          </div>
+          <button class="restart secondary">Change mode</button>
         </div>
       </section>
     `;
     const [restart, change] = this.shadowRoot.querySelectorAll(".restart");
     restart.addEventListener("click", () => this.start());
     change.addEventListener("click", () => this.renderStart());
+    this.shadowRoot.querySelector(".share").addEventListener("click", () => this.shareResult(rank, percentage));
     this.dispatchEvent(new CustomEvent("token-quiz-complete", {
       bubbles: true,
       detail: { score: this.score, levels: levelsPlayed, difficulty: this.difficulty },
     }));
+  }
+
+  async shareResult(rank, percentage) {
+    const text = `I scored ${this.score} as a ${rank} in the IQ.wiki Token Logo Quiz (${percentage}% accuracy). Can you beat me?`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "IQ.wiki Token Logo Quiz", text, url: location.href });
+        return;
+      } catch {}
+    }
+    try {
+      await navigator.clipboard.writeText(`${text} ${location.href}`);
+      this.shadowRoot.querySelector(".share").textContent = "Challenge copied";
+    } catch {
+      this.shadowRoot.querySelector(".share").textContent = "Share unavailable";
+    }
   }
 }
 
