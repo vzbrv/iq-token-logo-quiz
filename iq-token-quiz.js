@@ -457,7 +457,7 @@ class IqTokenQuiz extends HTMLElement {
         <p class="sub">Use keys 1–${choices.length}, or trust your cursor.</p>
         <div class="tools">
           <button class="tool" data-fifty>50:50</button>
-          <button class="tool" data-clue>Logo glimpse (-50)</button>
+          ${this.difficulty === "easy" ? "" : '<button class="tool" data-clue>Logo glimpse (-50)</button>'}
         </div>
         <div class="clue" data-cluebox hidden></div>
         <div class="choices">
@@ -479,7 +479,7 @@ class IqTokenQuiz extends HTMLElement {
       button.addEventListener("click", () => this.answer(button, answer));
     });
     this.shadowRoot.querySelector("[data-fifty]").addEventListener("click", () => this.useFifty(answer));
-    this.shadowRoot.querySelector("[data-clue]").addEventListener("click", () => this.useClue(answer));
+    this.shadowRoot.querySelector("[data-clue]")?.addEventListener("click", () => this.useClue(answer));
     this.shadowRoot.querySelector(".next").addEventListener("click", () => this.next());
     this.shadowRoot.querySelector(".quit").addEventListener("click", () => this.renderResult());
     const quiz = this.shadowRoot.querySelector(".quiz");
@@ -528,8 +528,7 @@ class IqTokenQuiz extends HTMLElement {
   getHint(answer) {
     const words = answer.name.trim().split(/\s+/);
     const letters = answer.name.replace(/[^a-z0-9]/gi, "").length;
-    const firstLetters = words.map((word) => word[0].toUpperCase()).join(" · ");
-    return `${words.length === 1 ? "One-word" : `${words.length}-word`} project · ${letters} letters · Word initials: ${firstLetters}`;
+    return `${words.length === 1 ? "One-word" : `${words.length}-word`} project · ${letters} letters`;
   }
 
   useClue(answer) {
