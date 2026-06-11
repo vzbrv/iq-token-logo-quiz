@@ -25,6 +25,22 @@ const DIFFICULTIES = {
   hard: { label: "Hard", detail: "Tiny logo fragment · 6 choices · 9 seconds", choices: 6, points: 250, seconds: 9 },
 };
 
+const CATEGORY_SYMBOLS = {
+  "Layer 1": new Set(["ETH", "SOL", "BNB", "ADA", "AVAX", "DOT", "TRX", "TON", "SUI", "APT", "NEAR", "ATOM", "ALGO", "HBAR", "ICP", "SEI", "EGLD", "KAS"]),
+  DeFi: new Set(["UNI", "AAVE", "MKR", "CRV", "LDO", "RUNE", "JUP", "PENDLE", "COMP", "SNX", "DYDX", "CAKE", "SUSHI", "1INCH", "ENA"]),
+  Stablecoins: new Set(["USDT", "USDC", "DAI", "FDUSD", "USDE", "USDS", "FRAX", "PYUSD", "TUSD"]),
+  Meme: new Set(["DOGE", "SHIB", "PEPE", "BONK", "WIF", "FLOKI", "BRETT", "MOG", "POPCAT", "BOME", "MEME"]),
+  AI: new Set(["TAO", "FET", "RENDER", "RNDR", "WLD", "AKT", "AIOZ", "VIRTUAL", "AGIX", "OCEAN"]),
+  Infrastructure: new Set(["LINK", "GRT", "FIL", "AR", "OP", "ARB", "STX", "IMX", "MNT", "TIA", "POL", "MATIC", "LRC"]),
+  Payments: new Set(["BTC", "LTC", "BCH", "XRP", "XLM", "DASH"]),
+  Privacy: new Set(["XMR", "ZEC", "ROSE", "SCRT"]),
+};
+
+function inferCategory(token) {
+  if (token.category) return token.category;
+  return Object.entries(CATEGORY_SYMBOLS).find(([, symbols]) => symbols.has(token.symbol?.toUpperCase()))?.[0] || "Other";
+}
+
 const styles = `
   :host {
     --iq-pink: #ff5ca8;
@@ -135,6 +151,31 @@ const styles = `
     z-index: 1;
     filter: drop-shadow(0 14px 22px rgba(0,0,0,.35));
   }
+  .logo-reveal {
+    position: absolute;
+    z-index: 2;
+    bottom: 16px;
+    padding: 7px 11px;
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 999px;
+    background: rgba(21,17,30,.78);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 900;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity .25s ease, transform .25s ease;
+  }
+  .logo-wrap.answered .logo-reveal { opacity: 1; transform: translateY(0); }
+  .score-pop {
+    position: absolute;
+    z-index: 3;
+    color: #fff;
+    font-size: 30px;
+    font-weight: 950;
+    text-shadow: 0 5px 20px rgba(255,92,168,.8);
+    animation: scorePop 1s ease both;
+  }
 
   .logo-fallback {
     display: none;
@@ -213,6 +254,10 @@ const styles = `
 
   .feedback strong { color: var(--iq-ink); }
   .feedback a { display: block; margin-top: 5px; color: var(--iq-pink-dark); font-weight: 800; text-decoration: none; }
+  .combo { display: inline-block; margin-left: 5px; color: var(--iq-pink-dark); font-weight: 950; animation: comboPop .45s ease; }
+  .knowledge { margin-top: 9px; padding: 11px 12px; border: 1px solid var(--iq-border); border-radius: 12px; background: var(--iq-bg); }
+  .knowledge span { color: var(--iq-muted); font-size: 11px; font-weight: 800; }
+  .knowledge a { margin-top: 3px; }
 
   .next, .restart, .start-button, .share {
     width: 100%;
@@ -232,6 +277,14 @@ const styles = `
   .result .big { margin: 8px 0 2px; font-size: 64px; font-weight: 950; letter-spacing: -.075em; }
   .result h2 { font-size: 31px; }
   .result .sub { margin-bottom: 24px; }
+  .result-hero { display: grid; grid-template-columns: 112px 1fr; gap: 18px; align-items: center; margin: 18px 0; text-align: left; }
+  .accuracy-ring { display: grid; width: 112px; height: 112px; place-items: center; border-radius: 50%; background: conic-gradient(var(--iq-pink) calc(var(--accuracy) * 1%), var(--iq-pink-soft) 0); box-shadow: inset 0 0 0 12px #fff; }
+  .accuracy-ring strong { font-size: 25px; }
+  .result-copy .big { margin: 0; font-size: 48px; }
+  .result-copy span { color: var(--iq-muted); font-size: 11px; font-weight: 900; text-transform: uppercase; }
+  .run-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; margin: 13px 0 18px; }
+  .run-dot { width: 9px; height: 9px; border-radius: 50%; background: #e97979; }
+  .run-dot.correct { background: #37b77b; }
   .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin: 18px 0; }
   .stat { padding: 13px 4px; border-radius: 12px; background: var(--iq-bg); }
   .stat strong, .stat span { display: block; }
@@ -261,19 +314,20 @@ const styles = `
   .level strong, .round strong { font-size: 13px; }
   .level span, .level small, .round span { color: var(--iq-muted); font-size: 10px; line-height: 1.35; }
   .rounds { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 18px; }
+  .categories { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 18px; }
+  .category { padding: 8px 11px; border: 1px solid var(--iq-border); border-radius: 999px; background: #fff; color: var(--iq-muted); font-size: 11px; font-weight: 900; }
+  .category:hover, .category.selected { border-color: var(--iq-pink); background: var(--iq-pink-soft); color: var(--iq-pink-dark); }
   .round { text-align: center; }
   .start-button { margin-top: 3px; }
   .logo-window { position: relative; display: grid; overflow: hidden; place-items: center; }
-  .logo-window.easy { width: 104px; height: 104px; }
-  .logo-window.medium { width: 66px; height: 66px; border-radius: 15px; }
-  .logo-window.hard { width: 40px; height: 40px; border-radius: 9px; }
+  .logo-window { width: var(--window-size); height: var(--window-size); border-radius: var(--window-radius); }
   .logo-window, .logo-window img { transition: width .28s ease, height .28s ease, border-radius .28s ease, transform .28s ease; }
   .logo-window img { position: absolute; max-width: none; transform: translate(var(--crop-x), var(--crop-y)); }
-  .logo-window.easy img { width: 104px; height: 104px; }
-  .logo-window.medium img { top: 0; left: 0; width: 110px; height: 110px; }
-  .logo-window.hard img { top: 0; left: 0; width: 122px; height: 122px; }
-  .logo-window.glimpse { width: 104px; height: 104px; border-radius: 22px; animation: glimpsePulse 1.6s ease; }
-  .logo-window.glimpse img { width: 104px; height: 104px; transform: translate(0, 0); }
+  .logo-window img { top: 0; left: 0; width: var(--logo-size); height: var(--logo-size); }
+  .logo-window.glimpse, .logo-window.revealed { width: 104px; height: 104px; border-radius: 22px; }
+  .logo-window.glimpse { animation: glimpsePulse 1.6s ease; }
+  .logo-window.glimpse img, .logo-window.revealed img { width: 104px; height: 104px; transform: translate(0, 0); }
+  .logo-window.revealed { animation: revealPulse .7s ease; }
   .secondary { margin-top: 8px; background: var(--iq-pink-soft); color: var(--iq-pink-dark); }
   .quit { width: 100%; margin-top: 9px; background: transparent; color: var(--iq-muted); font-size: 12px; font-weight: 800; }
   @keyframes orbit { to { transform: rotate(360deg); } }
@@ -281,6 +335,9 @@ const styles = `
     0%, 100% { box-shadow: 0 0 0 0 rgba(255,92,168,0); }
     35%, 70% { box-shadow: 0 0 0 12px rgba(255,92,168,.2), 0 0 34px rgba(255,92,168,.45); }
   }
+  @keyframes revealPulse { 45% { transform: scale(1.12); filter: drop-shadow(0 0 30px rgba(255,92,168,.8)); } }
+  @keyframes scorePop { 0% { opacity: 0; transform: translateY(15px) scale(.7); } 30% { opacity: 1; transform: translateY(-10px) scale(1.08); } 100% { opacity: 0; transform: translateY(-55px); } }
+  @keyframes comboPop { 50% { transform: scale(1.12); } }
 
   @media (max-width: 540px) {
     .quiz { padding: 17px; border-radius: 20px; }
@@ -290,6 +347,8 @@ const styles = `
     .choices { grid-template-columns: 1fr; }
     .logo-wrap { height: 190px; border-radius: 18px; }
     .result-actions { flex-direction: column; }
+    .result-hero { grid-template-columns: 92px 1fr; gap: 12px; }
+    .accuracy-ring { width: 92px; height: 92px; box-shadow: inset 0 0 0 10px #fff; }
   }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -311,11 +370,17 @@ class IqTokenQuiz extends HTMLElement {
     this.bestStreak = 0;
     this.missed = [];
     this.responseTimes = [];
+    this.answerHistory = [];
+    this.category = "All";
     this.timer = null;
     this.answered = false;
     this.endedByTimeout = false;
     this.lifelines = { fifty: true, clue: true };
-    this.tokens = FALLBACK_TOKENS;
+    this.tokens = FALLBACK_TOKENS.map((token, index) => ({
+      ...token,
+      rank: index + 1,
+      category: inferCategory(token),
+    }));
     this.dataSource = "preview";
     this.onStartScreen = false;
   }
@@ -339,11 +404,19 @@ class IqTokenQuiz extends HTMLElement {
       if (!response.ok) throw new Error(`Token data returned ${response.status}`);
       const tokens = await response.json();
       if (tokens.length < TOKEN_POOL_SIZE) throw new Error("Too few ranked tokens found");
-      this.tokens = tokens.slice(0, TOKEN_POOL_SIZE);
+      this.tokens = tokens.slice(0, TOKEN_POOL_SIZE).map((token, index) => ({
+        ...token,
+        rank: index + 1,
+        category: inferCategory(token),
+      }));
       this.dataSource = "live";
       if (this.onStartScreen) this.renderStart();
     } catch {
-      this.tokens = FALLBACK_TOKENS;
+      this.tokens = FALLBACK_TOKENS.map((token, index) => ({
+        ...token,
+        rank: index + 1,
+        category: inferCategory(token),
+      }));
       this.dataSource = "preview";
     }
   }
@@ -361,11 +434,33 @@ class IqTokenQuiz extends HTMLElement {
     this.bestStreak = 0;
     this.missed = [];
     this.responseTimes = [];
+    this.answerHistory = [];
     this.endedByTimeout = false;
     this.lifelines = { fifty: true, clue: true };
     this.onStartScreen = false;
-    this.deck = this.shuffle(this.tokens);
+    this.deck = this.buildDeck();
     this.renderQuestion();
+  }
+
+  getCategories() {
+    const counts = this.tokens.reduce((result, token) => {
+      result[token.category] = (result[token.category] || 0) + 1;
+      return result;
+    }, {});
+    return ["All", ...Object.entries(counts).filter(([, count]) => count >= 5).sort((a, b) => b[1] - a[1]).map(([name]) => name)];
+  }
+
+  getTokenPool() {
+    const filtered = this.category === "All" ? this.tokens : this.tokens.filter((token) => token.category === this.category);
+    return filtered.length >= DIFFICULTIES[this.difficulty].choices ? filtered : this.tokens;
+  }
+
+  buildDeck() {
+    const pool = [...this.getTokenPool()].sort((a, b) => (a.rank || 999) - (b.rank || 999));
+    const cuts = [0.1, 0.3, 0.6, 1].map((ratio) => Math.ceil(pool.length * ratio));
+    return cuts.flatMap((end, index) =>
+      this.shuffle(pool.slice(index ? cuts[index - 1] : 0, end))
+    );
   }
 
   renderStart() {
@@ -387,6 +482,10 @@ class IqTokenQuiz extends HTMLElement {
                 <small>Up to ${level.points}+ pts</small>
               </button>
             `).join("")}
+          </div>
+          <p class="section-label">Pick a category</p>
+          <div class="categories">
+            ${this.getCategories().map((category) => `<button class="category ${this.category === category ? "selected" : ""}" data-category="${category}">${category}</button>`).join("")}
           </div>
           <p class="section-label">Pick your run</p>
           <div class="rounds">
@@ -412,22 +511,41 @@ class IqTokenQuiz extends HTMLElement {
         this.renderStart();
       });
     });
+    this.shadowRoot.querySelectorAll(".category").forEach((button) => {
+      button.addEventListener("click", () => {
+        this.category = button.dataset.category;
+        this.renderStart();
+      });
+    });
     this.shadowRoot.querySelector("[data-start]").addEventListener("click", () => this.start());
   }
 
   getChoices(answer) {
-    const others = this.shuffle(this.tokens.filter((token) => token.symbol !== answer.symbol))
+    const pool = this.getTokenPool();
+    const nearby = pool.filter((token) => token.symbol !== answer.symbol && Math.abs((token.rank || 0) - (answer.rank || 0)) <= 100);
+    const candidates = nearby.length >= DIFFICULTIES[this.difficulty].choices - 1 ? nearby : pool.filter((token) => token.symbol !== answer.symbol);
+    const others = this.shuffle(candidates)
       .slice(0, DIFFICULTIES[this.difficulty].choices - 1);
     return this.shuffle([answer, ...others]);
   }
 
   getAnswer() {
-    if (this.question > 0 && this.question % this.tokens.length === 0) this.deck = this.shuffle(this.tokens);
-    return this.deck[this.question % this.tokens.length];
+    if (this.question > 0 && this.question % this.deck.length === 0) this.deck = this.buildDeck();
+    return this.deck[this.question % this.deck.length];
   }
 
   getSeconds() {
     return Math.max(4, DIFFICULTIES[this.difficulty].seconds - Math.floor(this.question / 10));
+  }
+
+  getProgression() {
+    const stage = Math.floor(this.question / 10);
+    const labels = ["Popular picks", "Recognizable", "Deep cuts", "Expert territory"];
+    const baseWindow = { easy: 104, medium: 66, hard: 40 }[this.difficulty];
+    const shrink = Math.min(stage, 8) * { easy: 4, medium: 3, hard: 2 }[this.difficulty];
+    const windowSize = Math.max({ easy: 68, medium: 42, hard: 26 }[this.difficulty], baseWindow - shrink);
+    const logoSize = Math.max(104, windowSize + { easy: 0, medium: 44, hard: 82 }[this.difficulty] + Math.min(stage, 8) * 3);
+    return { label: labels[Math.min(3, Math.floor(stage / 2))], windowSize, logoSize };
   }
 
   renderQuestion() {
@@ -435,7 +553,8 @@ class IqTokenQuiz extends HTMLElement {
     const seconds = this.getSeconds();
     const stageLevel = (this.question % 10) + 1;
     const choices = this.getChoices(answer);
-    const cropMax = this.difficulty === "medium" ? 40 : this.difficulty === "hard" ? 76 : 0;
+    const progression = this.getProgression();
+    const cropMax = Math.max(0, progression.logoSize - progression.windowSize);
     const cropX = -Math.floor(Math.random() * cropMax);
     const cropY = -Math.floor(Math.random() * cropMax);
     this.answered = false;
@@ -443,7 +562,7 @@ class IqTokenQuiz extends HTMLElement {
     this.shadowRoot.innerHTML = `
       <style>${styles}</style>
       <section class="quiz" aria-label="Token logo quiz" tabindex="0">
-        <div class="top"><p class="eyebrow">${DIFFICULTIES[this.difficulty].label} · Stage ${Math.floor(this.question / 10) + 1}</p><span class="live">Level ${this.question + 1} / ${this.runLength}</span></div>
+        <div class="top"><p class="eyebrow">${DIFFICULTIES[this.difficulty].label} · ${progression.label}</p><span class="live">Level ${this.question + 1} / ${this.runLength}</span></div>
         <div class="hud">
           <div class="hud-item"><strong class="score">${this.score}</strong><span>Score</span></div>
           <div class="hud-item"><strong data-streak>${this.streak}×</strong><span>Streak</span></div>
@@ -451,10 +570,11 @@ class IqTokenQuiz extends HTMLElement {
         </div>
         <div class="timer"><strong data-time>${seconds}s</strong><div class="timer-track"><span data-timebar style="width:100%"></span></div></div>
         <div class="logo-wrap">
-          <div class="logo-window ${this.difficulty}">
+          <div class="logo-window ${this.difficulty}" style="--window-size:${progression.windowSize}px;--logo-size:${progression.logoSize}px;--window-radius:${Math.max(8, Math.round(progression.windowSize * .2))}px">
             <img src="${this.imageUrl(answer)}" alt="Mystery token logo" style="--crop-x:${cropX}px;--crop-y:${cropY}px">
             <span class="logo-fallback">?</span>
           </div>
+          <span class="logo-reveal">${answer.name} · ${answer.category}</span>
         </div>
         <h2>Which token is this?</h2>
         <p class="sub">Use keys 1–${choices.length}, or trust your cursor.</p>
@@ -536,6 +656,14 @@ class IqTokenQuiz extends HTMLElement {
     return `${words.length === 1 ? "One-word" : `${words.length}-word`} project · ${letters} letters`;
   }
 
+  getComboLabel() {
+    if (this.streak >= 10) return "Logo oracle";
+    if (this.streak >= 5) return "Unstoppable";
+    if (this.streak >= 3) return "On-chain";
+    if (this.streak >= 2) return "Locked in";
+    return "";
+  }
+
   useClue(answer) {
     if (!this.lifelines.clue || this.answered || this.score < LIFELINE_COST) return;
     this.lifelines.clue = false;
@@ -560,6 +688,7 @@ class IqTokenQuiz extends HTMLElement {
     const correct = !timedOut && selected?.dataset.symbol === answer.symbol;
     const elapsed = Math.min(this.getSeconds(), (Date.now() - this.questionStartedAt) / 1000);
     this.responseTimes.push(elapsed);
+    this.answerHistory.push(correct);
 
     buttons.forEach((button) => {
       button.disabled = true;
@@ -571,7 +700,12 @@ class IqTokenQuiz extends HTMLElement {
       this.streak += 1;
       this.bestStreak = Math.max(this.bestStreak, this.streak);
       this.correctAnswers += 1;
-      this.score += DIFFICULTIES[this.difficulty].points + Math.max(0, this.streak - 1) * 25 + this.timeLeft * 10;
+      const awarded = DIFFICULTIES[this.difficulty].points + Math.max(0, this.streak - 1) * 25 + this.timeLeft * 10;
+      this.score += awarded;
+      const pop = document.createElement("span");
+      pop.className = "score-pop";
+      pop.textContent = `+${awarded}`;
+      this.shadowRoot.querySelector(".logo-wrap").append(pop);
     } else {
       this.streak = 0;
       this.missed.push(answer);
@@ -580,10 +714,14 @@ class IqTokenQuiz extends HTMLElement {
 
     this.shadowRoot.querySelector(".score").textContent = this.score;
     this.shadowRoot.querySelector("[data-streak]").textContent = `${this.streak}×`;
+    this.shadowRoot.querySelector(".logo-wrap").classList.add("answered");
+    this.shadowRoot.querySelector(".logo-window").classList.add("revealed");
+    const combo = this.getComboLabel();
     this.shadowRoot.querySelector(".feedback").innerHTML = correct
-      ? `<strong>Correct${this.streak > 1 ? ` · ${this.streak} answer streak` : ""}.</strong> That is ${answer.name} (${answer.symbol}).`
+      ? `<strong>Correct${this.streak > 1 ? ` · ${this.streak} answer streak` : ""}.</strong>${combo ? `<span class="combo">${combo}</span>` : ""}
+         <div class="knowledge"><span>${answer.category} · Ranked #${answer.rank} in this IQ.wiki project set</span><a href="https://iq.wiki/wiki/${answer.wiki}" target="_blank" rel="noopener noreferrer">Explore ${answer.name} on IQ.wiki →</a></div>`
       : `<strong>${timedOut ? "Time is up." : "Not quite."} That is ${answer.name} (${answer.symbol}).</strong>
-         <a href="https://iq.wiki/wiki/${answer.wiki}" target="_blank" rel="noopener noreferrer">Learn about ${answer.name} on IQ.wiki →</a>`;
+         <div class="knowledge"><span>${answer.category} · Ranked #${answer.rank} in this IQ.wiki project set</span><a href="https://iq.wiki/wiki/${answer.wiki}" target="_blank" rel="noopener noreferrer">Learn about ${answer.name} on IQ.wiki →</a></div>`;
     this.shadowRoot.querySelector(".next").hidden = timedOut;
 
     this.dispatchEvent(new CustomEvent("token-quiz-answer", {
@@ -628,10 +766,15 @@ class IqTokenQuiz extends HTMLElement {
       <section class="quiz" aria-label="Token logo quiz result">
         <div class="result">
           <div class="rank">${rank}</div>
-          <p class="eyebrow">${DIFFICULTIES[this.difficulty].label} run ${this.endedByTimeout ? "timed out" : "complete"}</p>
-          <div class="big">${this.score}</div>
+          <p class="eyebrow">${this.category} · ${DIFFICULTIES[this.difficulty].label} run ${this.endedByTimeout ? "timed out" : "complete"}</p>
           <h2>${title}</h2>
-          <p class="sub">${this.correctAnswers} of ${levelsPlayed} correct · ${percentage}% accuracy · Personal best ${best}</p>
+          <div class="result-hero">
+            <div class="accuracy-ring" style="--accuracy:${percentage}"><strong>${percentage}%</strong></div>
+            <div class="result-copy"><div class="big">${this.score}</div><span>points · personal best ${best}</span></div>
+          </div>
+          <div class="run-grid" aria-label="${this.correctAnswers} of ${levelsPlayed} correct">
+            ${this.answerHistory.map((correct) => `<span class="run-dot ${correct ? "correct" : ""}"></span>`).join("")}
+          </div>
           <div class="stats">
             <div class="stat"><strong>${levelsPlayed}</strong><span>Levels reached</span></div>
             <div class="stat"><strong>${this.bestStreak}</strong><span>Best streak</span></div>
@@ -653,12 +796,13 @@ class IqTokenQuiz extends HTMLElement {
     this.shadowRoot.querySelector(".share").addEventListener("click", () => this.shareResult(rank, percentage));
     this.dispatchEvent(new CustomEvent("token-quiz-complete", {
       bubbles: true,
-      detail: { score: this.score, levels: levelsPlayed, difficulty: this.difficulty },
+      detail: { score: this.score, levels: levelsPlayed, difficulty: this.difficulty, category: this.category },
     }));
   }
 
   async shareResult(rank, percentage) {
-    const text = `I reached Level ${this.responseTimes.length} on ${DIFFICULTIES[this.difficulty].label} and scored ${this.score} points in the IQ.wiki Token Logo Quiz (${percentage}% accuracy). Think you can beat me?`;
+    const grid = this.answerHistory.slice(-10).map((correct) => correct ? "🟩" : "🟥").join("");
+    const text = `I reached Level ${this.responseTimes.length} in ${this.category} · ${DIFFICULTIES[this.difficulty].label} and scored ${this.score} points in the IQ.wiki Token Logo Quiz (${percentage}% accuracy).\n${grid}\nThink you can beat me?`;
     if (navigator.share) {
       try {
         await navigator.share({ title: "IQ.wiki Token Logo Quiz", text, url: location.href });
