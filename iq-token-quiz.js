@@ -459,8 +459,8 @@ class IqTokenQuiz extends HTMLElement {
         <h2>Which token is this?</h2>
         <p class="sub">Use keys 1–${choices.length}, or trust your cursor.</p>
         <div class="tools">
-          <button class="tool" data-fifty ${!this.lifelines.fifty || this.score < LIFELINE_COST ? `disabled title="${this.lifelines.fifty ? "Earn 50 points to unlock" : "Available again next stage"}"` : ""}>50:50 (-50)</button>
-          ${this.difficulty === "easy" ? "" : `<button class="tool" data-clue ${!this.lifelines.clue || this.score < LIFELINE_COST ? `disabled title="${this.lifelines.clue ? "Earn 50 points to unlock" : "Available again next stage"}"` : ""}>Logo glimpse (-50)</button>`}
+          <button class="tool" data-fifty ${!this.lifelines.fifty || this.score < LIFELINE_COST ? `disabled title="${this.lifelines.fifty ? "Earn 50 points to unlock" : "Already used this level"}"` : ""}>50:50 (-50)</button>
+          ${this.difficulty === "easy" ? "" : `<button class="tool" data-clue ${!this.lifelines.clue || this.score < LIFELINE_COST ? `disabled title="${this.lifelines.clue ? "Earn 50 points to unlock" : "Already used this level"}"` : ""}>Logo glimpse (-50)</button>`}
         </div>
         <div class="clue" data-cluebox hidden></div>
         <div class="choices">
@@ -600,7 +600,7 @@ class IqTokenQuiz extends HTMLElement {
     this.stopTimer();
     this.question += 1;
     if (this.question < this.runLength) {
-      if (this.question % 10 === 0) this.lifelines = { fifty: true, clue: true };
+      this.lifelines = { fifty: true, clue: true };
       this.renderQuestion();
     } else {
       this.renderResult();
@@ -640,7 +640,7 @@ class IqTokenQuiz extends HTMLElement {
           ${this.missed.length ? `<div class="review"><strong>Review missed tokens on IQ.wiki</strong>${this.missed.map((token) => `<a href="https://iq.wiki/wiki/${token.wiki}" target="_blank" rel="noopener noreferrer">${token.name} →</a>`).join("")}</div>` : ""}
           <p class="sub">Fast answers and streaks can push your score above ${maxBaseScore}.</p>
           <div class="result-actions">
-            <button class="share">Challenge a friend</button>
+            <button class="share">Challenge friends · ${this.score} pts</button>
             <button class="restart">Play again</button>
           </div>
           <button class="restart secondary">Change mode</button>
@@ -658,7 +658,7 @@ class IqTokenQuiz extends HTMLElement {
   }
 
   async shareResult(rank, percentage) {
-    const text = `I scored ${this.score} as a ${rank} in the IQ.wiki Token Logo Quiz (${percentage}% accuracy). Can you beat me?`;
+    const text = `I reached Level ${this.responseTimes.length} on ${DIFFICULTIES[this.difficulty].label} and scored ${this.score} points in the IQ.wiki Token Logo Quiz (${percentage}% accuracy). Think you can beat me?`;
     if (navigator.share) {
       try {
         await navigator.share({ title: "IQ.wiki Token Logo Quiz", text, url: location.href });
