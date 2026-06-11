@@ -266,13 +266,20 @@ const styles = `
   .logo-window.easy { width: 104px; height: 104px; }
   .logo-window.medium { width: 66px; height: 66px; border-radius: 15px; }
   .logo-window.hard { width: 40px; height: 40px; border-radius: 9px; }
+  .logo-window, .logo-window img { transition: width .28s ease, height .28s ease, border-radius .28s ease, transform .28s ease; }
   .logo-window img { position: absolute; max-width: none; transform: translate(var(--crop-x), var(--crop-y)); }
   .logo-window.easy img { width: 104px; height: 104px; }
   .logo-window.medium img { top: 0; left: 0; width: 110px; height: 110px; }
   .logo-window.hard img { top: 0; left: 0; width: 122px; height: 122px; }
+  .logo-window.glimpse { width: 104px; height: 104px; border-radius: 22px; animation: glimpsePulse 1.6s ease; }
+  .logo-window.glimpse img { width: 104px; height: 104px; transform: translate(0, 0); }
   .secondary { margin-top: 8px; background: var(--iq-pink-soft); color: var(--iq-pink-dark); }
   .quit { width: 100%; margin-top: 9px; background: transparent; color: var(--iq-muted); font-size: 12px; font-weight: 800; }
   @keyframes orbit { to { transform: rotate(360deg); } }
+  @keyframes glimpsePulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255,92,168,0); }
+    35%, 70% { box-shadow: 0 0 0 12px rgba(255,92,168,.2), 0 0 34px rgba(255,92,168,.45); }
+  }
 
   @media (max-width: 540px) {
     .quiz { padding: 17px; border-radius: 20px; }
@@ -450,7 +457,7 @@ class IqTokenQuiz extends HTMLElement {
         <p class="sub">Use keys 1–${choices.length}, or trust your cursor.</p>
         <div class="tools">
           <button class="tool" data-fifty>50:50</button>
-          <button class="tool" data-clue>Reveal clue (-50)</button>
+          <button class="tool" data-clue>Logo glimpse (-50)</button>
         </div>
         <div class="clue" data-cluebox hidden></div>
         <div class="choices">
@@ -518,14 +525,24 @@ class IqTokenQuiz extends HTMLElement {
     this.shadowRoot.querySelector("[data-fifty]").disabled = true;
   }
 
+  getHint(answer) {
+    const words = answer.name.trim().split(/\s+/);
+    const letters = answer.name.replace(/[^a-z0-9]/gi, "").length;
+    const firstLetters = words.map((word) => word[0].toUpperCase()).join(" · ");
+    return `${words.length === 1 ? "One-word" : `${words.length}-word`} project · ${letters} letters · Word initials: ${firstLetters}`;
+  }
+
   useClue(answer) {
     if (!this.lifelines.clue || this.answered) return;
     this.lifelines.clue = false;
     this.score = Math.max(0, this.score - 50);
     this.shadowRoot.querySelector(".score").textContent = this.score;
     this.shadowRoot.querySelector("[data-clue]").disabled = true;
+    const logo = this.shadowRoot.querySelector(".logo-window");
+    logo.classList.add("glimpse");
+    setTimeout(() => logo?.isConnected && logo.classList.remove("glimpse"), 1600);
     const clue = this.shadowRoot.querySelector("[data-cluebox]");
-    clue.textContent = `${answer.category}: ${answer.hint}.`;
+    clue.textContent = `Full logo revealed briefly · ${this.getHint(answer)}`;
     clue.hidden = false;
   }
 
@@ -558,8 +575,8 @@ class IqTokenQuiz extends HTMLElement {
     this.shadowRoot.querySelector(".score").textContent = this.score;
     this.shadowRoot.querySelector("[data-streak]").textContent = `${this.streak}×`;
     this.shadowRoot.querySelector(".feedback").innerHTML = correct
-      ? `<strong>Correct${this.streak > 1 ? ` · ${this.streak} answer streak` : ""}.</strong> ${answer.category} · ${answer.hint}.`
-      : `<strong>${timedOut ? "Time is up." : `That is ${answer.name} (${answer.symbol}).`}</strong> ${answer.hint}.
+      ? `<strong>Correct${this.streak > 1 ? ` · ${this.streak} answer streak` : ""}.</strong> That is ${answer.name} (${answer.symbol}).`
+      : `<strong>${timedOut ? "Time is up." : "Not quite."} That is ${answer.name} (${answer.symbol}).</strong>
          <a href="https://iq.wiki/wiki/${answer.wiki}" target="_blank" rel="noopener noreferrer">Learn about ${answer.name} on IQ.wiki →</a>`;
     this.shadowRoot.querySelector(".next").hidden = false;
 
