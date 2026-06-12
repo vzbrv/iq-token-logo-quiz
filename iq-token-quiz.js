@@ -16,7 +16,9 @@ const FALLBACK_TOKENS = [
   { name: "Basic Attention Token", symbol: "BAT", icon: "bat", wiki: "basic-attention-token", category: "Web3", hint: "A token for the digital advertising ecosystem" },
 ];
 const TOKEN_POOL_SIZE = 500;
-const LIFELINE_COST = 50;
+const FIFTY_COST = 50;
+const GLIMPSE_COST = 100;
+const NAME_CUE_COST = 150;
 const TOKEN_DATA_URL = new URL("tokens.json", document.currentScript?.src || window.location.href).href;
 
 const DIFFICULTIES = {
@@ -238,7 +240,7 @@ const styles = `
   .choice.removed { opacity: .12; pointer-events: none; }
   .choice:disabled { cursor: default; }
 
-  .tools { display: flex; justify-content: center; gap: 8px; margin: 0 0 13px; }
+  .tools { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 0 0 13px; }
   .tool { padding: 8px 12px; border: 1px solid var(--iq-border); border-radius: 999px; background: #fff; color: var(--iq-pink-dark); font-size: 11px; font-weight: 900; }
   .tool:disabled { opacity: .4; cursor: default; }
   .clue { margin-bottom: 13px; padding: 10px 12px; border-radius: 10px; background: var(--iq-pink-soft); color: var(--iq-pink-dark); font-size: 12px; font-weight: 800; }
@@ -334,10 +336,19 @@ const styles = `
   .category:hover, .category.selected { border-color: var(--iq-pink); background: var(--iq-pink-soft); color: var(--iq-pink-dark); }
   .round { text-align: center; }
   .start-button { margin-top: 3px; }
-  .logo-window { position: relative; display: grid; overflow: hidden; place-items: center; }
+  .logo-window {
+    position: relative;
+    display: grid;
+    overflow: hidden;
+    place-items: center;
+    background-color: #d8d3d6;
+    background-image: linear-gradient(45deg, #f7f4f6 25%, transparent 25%, transparent 75%, #f7f4f6 75%), linear-gradient(45deg, #f7f4f6 25%, transparent 25%, transparent 75%, #f7f4f6 75%);
+    background-position: 0 0, 8px 8px;
+    background-size: 16px 16px;
+  }
   .logo-window { width: var(--window-size); height: var(--window-size); border-radius: var(--window-radius); }
   .logo-window, .logo-window img { transition: width .28s ease, height .28s ease, border-radius .28s ease, transform .28s ease; }
-  .logo-window img { position: absolute; max-width: none; transform: translate(var(--crop-x), var(--crop-y)); }
+  .logo-window img { position: absolute; max-width: none; filter: drop-shadow(0 1px 2px rgba(0,0,0,.42)); transform: translate(var(--crop-x), var(--crop-y)); }
   .logo-window img { top: 0; left: 0; width: var(--logo-size); height: var(--logo-size); }
   .logo-window.glimpse, .logo-window.revealed { width: 104px; height: 104px; border-radius: 22px; }
   .logo-window.glimpse { animation: glimpsePulse 1.6s ease; }
@@ -482,7 +493,7 @@ class IqTokenQuiz extends HTMLElement {
     this.timer = null;
     this.answered = false;
     this.endedByTimeout = false;
-    this.lifelines = { fifty: true, clue: true };
+    this.lifelines = { fifty: true, glimpse: true, nameCue: true };
     this.tokens = FALLBACK_TOKENS.map((token, index) => ({
       ...token,
       rank: index + 1,
@@ -543,7 +554,7 @@ class IqTokenQuiz extends HTMLElement {
     this.responseTimes = [];
     this.answerHistory = [];
     this.endedByTimeout = false;
-    this.lifelines = { fifty: true, clue: true };
+    this.lifelines = { fifty: true, glimpse: true, nameCue: true };
     this.onStartScreen = false;
     this.deck = this.buildDeck();
     this.renderQuestion();
@@ -686,8 +697,9 @@ class IqTokenQuiz extends HTMLElement {
         <h2>Which token is this?</h2>
         <p class="sub">Use keys 1–${choices.length}, or trust your cursor.</p>
         <div class="tools">
-          <button class="tool" data-fifty ${!this.lifelines.fifty || this.score < LIFELINE_COST ? `disabled title="${this.lifelines.fifty ? "Earn 50 points to unlock" : "Already used this level"}"` : ""}>50:50 (-50)</button>
-          ${this.difficulty === "easy" ? "" : `<button class="tool" data-clue ${!this.lifelines.clue || this.score < LIFELINE_COST ? `disabled title="${this.lifelines.clue ? "Earn 50 points to unlock" : "Already used this level"}"` : ""}>Logo glimpse (-50)</button>`}
+          <button class="tool" data-fifty ${!this.lifelines.fifty || this.score < FIFTY_COST ? `disabled title="${this.lifelines.fifty ? `Earn ${FIFTY_COST} points to unlock` : "Already used this level"}"` : ""}>50:50 (-${FIFTY_COST})</button>
+          ${this.difficulty === "easy" ? "" : `<button class="tool" data-glimpse ${!this.lifelines.glimpse || this.score < GLIMPSE_COST ? `disabled title="${this.lifelines.glimpse ? `Earn ${GLIMPSE_COST} points to unlock` : "Already used this level"}"` : ""}>Logo glimpse (-${GLIMPSE_COST})</button>`}
+          <button class="tool" data-name-cue ${!this.lifelines.nameCue || this.score < NAME_CUE_COST ? `disabled title="${this.lifelines.nameCue ? `Earn ${NAME_CUE_COST} points to unlock` : "Already used this level"}"` : ""}>Name cue (-${NAME_CUE_COST})</button>
         </div>
         <div class="clue" data-cluebox hidden></div>
         <div class="choices">
@@ -709,7 +721,8 @@ class IqTokenQuiz extends HTMLElement {
       button.addEventListener("click", () => this.answer(button, answer));
     });
     this.shadowRoot.querySelector("[data-fifty]").addEventListener("click", () => this.useFifty(answer));
-    this.shadowRoot.querySelector("[data-clue]")?.addEventListener("click", () => this.useClue(answer));
+    this.shadowRoot.querySelector("[data-glimpse]")?.addEventListener("click", () => this.useGlimpse());
+    this.shadowRoot.querySelector("[data-name-cue]").addEventListener("click", () => this.useNameCue(answer, choices));
     this.shadowRoot.querySelector(".next").addEventListener("click", () => this.next());
     this.shadowRoot.querySelector(".quit").addEventListener("click", () => this.renderResult());
     const quiz = this.shadowRoot.querySelector(".quiz");
@@ -747,9 +760,9 @@ class IqTokenQuiz extends HTMLElement {
   }
 
   useFifty(answer) {
-    if (!this.lifelines.fifty || this.answered || this.score < LIFELINE_COST) return;
+    if (!this.lifelines.fifty || this.answered || this.score < FIFTY_COST) return;
     this.lifelines.fifty = false;
-    this.score -= LIFELINE_COST;
+    this.score -= FIFTY_COST;
     this.shadowRoot.querySelector(".score").textContent = this.score;
     const wrong = this.shuffle([...this.shadowRoot.querySelectorAll(".choice")]
       .filter((button) => button.dataset.symbol !== answer.symbol));
@@ -757,10 +770,27 @@ class IqTokenQuiz extends HTMLElement {
     this.shadowRoot.querySelector("[data-fifty]").disabled = true;
   }
 
-  getHint(answer) {
-    const words = answer.name.trim().split(/\s+/);
-    const letters = answer.name.replace(/[^a-z0-9]/gi, "").length;
-    return `${words.length === 1 ? "One-word" : `${words.length}-word`} project · ${letters} letters`;
+  getNameCue(answer, choices) {
+    const details = choices.map((token) => ({
+      token,
+      words: token.name.trim().split(/\s+/).length,
+      characters: token.name.replace(/[^a-z0-9]/gi, "").length,
+    }));
+    const answerDetails = details.find(({ token }) => token.symbol === answer.symbol);
+    const sameShape = details.filter(({ words }) => (words === 1) === (answerDetails.words === 1));
+
+    if (sameShape.length >= 2 && sameShape.length < choices.length) {
+      return answerDetails.words === 1
+        ? "Its name is a single word, shared by multiple options"
+        : "Its name uses multiple words, shared by multiple options";
+    }
+
+    const nearest = details
+      .filter(({ token }) => token.symbol !== answer.symbol)
+      .sort((a, b) => Math.abs(a.characters - answerDetails.characters) - Math.abs(b.characters - answerDetails.characters))[0];
+    const lower = Math.max(1, Math.min(answerDetails.characters, nearest.characters) - 2);
+    const upper = Math.max(answerDetails.characters, nearest.characters) + 2;
+    return `Its name falls in the broad ${lower}–${upper} character range`;
   }
 
   getComboLabel() {
@@ -771,20 +801,31 @@ class IqTokenQuiz extends HTMLElement {
     return "";
   }
 
-  useClue(answer) {
-    if (!this.lifelines.clue || this.answered || this.score < LIFELINE_COST) return;
-    this.lifelines.clue = false;
-    this.score -= LIFELINE_COST;
+  useGlimpse() {
+    if (!this.lifelines.glimpse || this.answered || this.score < GLIMPSE_COST) return;
+    this.lifelines.glimpse = false;
+    this.score -= GLIMPSE_COST;
     this.shadowRoot.querySelector(".score").textContent = this.score;
-    this.shadowRoot.querySelector("[data-clue]").disabled = true;
+    this.shadowRoot.querySelector("[data-glimpse]").disabled = true;
     const clue = this.shadowRoot.querySelector("[data-cluebox]");
-    clue.textContent = `Full logo revealed briefly · ${this.getHint(answer)}`;
+    clue.textContent = "Full logo revealed briefly";
     clue.hidden = false;
     const logo = this.shadowRoot.querySelector(".logo-window");
     logo.classList.remove("glimpse");
     void logo.offsetWidth;
     logo.classList.add("glimpse");
     setTimeout(() => logo?.isConnected && logo.classList.remove("glimpse"), 1600);
+  }
+
+  useNameCue(answer, choices) {
+    if (!this.lifelines.nameCue || this.answered || this.score < NAME_CUE_COST) return;
+    this.lifelines.nameCue = false;
+    this.score -= NAME_CUE_COST;
+    this.shadowRoot.querySelector(".score").textContent = this.score;
+    this.shadowRoot.querySelector("[data-name-cue]").disabled = true;
+    const clue = this.shadowRoot.querySelector("[data-cluebox]");
+    clue.textContent = `Name cue · ${this.getNameCue(answer, choices)}`;
+    clue.hidden = false;
   }
 
   answer(selected, answer, timedOut = false) {
@@ -852,7 +893,7 @@ class IqTokenQuiz extends HTMLElement {
     this.stopTimer();
     this.question += 1;
     if (this.question < this.runLength) {
-      this.lifelines = { fifty: true, clue: true };
+      this.lifelines = { fifty: true, glimpse: true, nameCue: true };
       this.renderQuestion();
     } else {
       this.renderResult();
