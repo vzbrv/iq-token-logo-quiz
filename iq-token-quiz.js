@@ -296,7 +296,7 @@ const styles = `
   .result-actions { align-items: stretch; }
   .result-actions button { flex: 1; }
   .share-label { margin: 18px 0 8px; color: var(--iq-muted); font-size: 10px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
-  .share-links { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-bottom: 10px; }
+  .share-links { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; margin-bottom: 10px; }
   .share-link {
     padding: 11px 6px;
     border: 1px solid var(--iq-border);
@@ -900,18 +900,15 @@ class IqTokenQuiz extends HTMLElement {
           ${this.missed.length ? `<div class="review"><strong>Review missed tokens on IQ.wiki</strong>${this.missed.map((token) => `<a href="https://iq.wiki/wiki/${token.wiki}" target="_blank" rel="noopener noreferrer">${token.name} →</a>`).join("")}</div>` : ""}
           <p class="sub">Fast answers and streaks can push your score above ${maxBaseScore}.</p>
           <div class="challenge-card">
-            <p class="eyebrow">Challenge issued</p>
+            <p class="eyebrow">Share your score</p>
             <strong>I scored ${this.correctAnswers}/${levelsPlayed} on IQ Token Logo Quiz.</strong>
             <p>Can you beat me?</p>
             <div class="share-links">
               <a class="share-link" href="https://twitter.com/intent/tweet?text=${encodedShareText}&url=${shareUrl}" target="_blank" rel="noopener noreferrer">Share on X</a>
-              <a class="share-link" href="https://t.me/share/url?url=${shareUrl}&text=${encodedShareText}" target="_blank" rel="noopener noreferrer">Telegram</a>
-              <a class="share-link" href="https://wa.me/?text=${encodedShareText}%20${shareUrl}" target="_blank" rel="noopener noreferrer">WhatsApp</a>
               <button class="share-link copy-share">Copy link</button>
             </div>
           </div>
           <div class="result-actions">
-            <button class="share">Challenge a friend</button>
             <button class="restart">Play again</button>
           </div>
           <button class="restart secondary">Change mode</button>
@@ -921,7 +918,6 @@ class IqTokenQuiz extends HTMLElement {
     const [restart, change] = this.shadowRoot.querySelectorAll(".restart");
     restart.addEventListener("click", () => this.start());
     change.addEventListener("click", () => this.renderStart());
-    this.shadowRoot.querySelector(".share").addEventListener("click", () => this.shareResult(rank, percentage));
     this.shadowRoot.querySelector(".copy-share").addEventListener("click", () => this.copyChallenge(percentage));
     this.dispatchEvent(new CustomEvent("token-quiz-complete", {
       bubbles: true,
@@ -935,19 +931,7 @@ class IqTokenQuiz extends HTMLElement {
   }
 
   getEducationalDescription(token) {
-    if (token.hint) return token.hint;
-    const descriptions = {
-      "AI": `${token.name} connects artificial intelligence with crypto and blockchain technology.`,
-      "DeFi": `${token.name} is part of decentralized finance, where financial tools operate through blockchain protocols.`,
-      "Infrastructure": `${token.name} provides infrastructure that helps blockchain applications and networks operate.`,
-      "Layer 1": `${token.name} is a layer 1 blockchain with its own base network for transactions and applications.`,
-      "Meme": `${token.name} is a community-driven meme token tracked by IQ.wiki.`,
-      "Payments": `${token.name} focuses on transferring value and enabling blockchain-based payments.`,
-      "Privacy": `${token.name} is a crypto project focused on privacy and protecting transaction information.`,
-      "Stablecoins": `${token.name} is designed to maintain a more stable value than typical cryptocurrencies.`,
-      "Web3": `${token.name} helps build a more open internet using tokens and blockchain technology.`,
-    };
-    return descriptions[token.category] || `${token.name} is a crypto project documented by the IQ.wiki community.`;
+    return token.description || token.hint || `Read the IQ.wiki article to learn what ${token.name} does.`;
   }
 
   async copyChallenge(percentage) {
@@ -960,21 +944,6 @@ class IqTokenQuiz extends HTMLElement {
     }
   }
 
-  async shareResult(rank, percentage) {
-    const text = this.getShareText(percentage);
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: "IQ.wiki Token Logo Quiz", text, url: location.href });
-        return;
-      } catch {}
-    }
-    try {
-      await navigator.clipboard.writeText(`${text} ${location.href}`);
-      this.shadowRoot.querySelector(".share").textContent = "Challenge copied";
-    } catch {
-      this.shadowRoot.querySelector(".share").textContent = "Share unavailable";
-    }
-  }
 }
 
 customElements.define("iq-token-quiz", IqTokenQuiz);
