@@ -18,7 +18,7 @@ const FALLBACK_TOKENS = [
 const TOKEN_POOL_SIZE = 500;
 const FIFTY_COST = 50;
 const GLIMPSE_COST = 100;
-const NAME_CUE_COST = 150;
+const WIKI_CLUE_COST = 150;
 const TOKEN_DATA_URL = new URL("tokens.json", document.currentScript?.src || window.location.href).href;
 
 const DIFFICULTIES = {
@@ -426,6 +426,44 @@ const styles = `
   .knowledge-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 12px; border-top: 1px solid #2c272b; }
   .knowledge-actions a { margin: 0; padding: 8px 11px; border-radius: 5px; background: var(--iq-pink); color: #160b11; font-size: 11px; }
   .knowledge-actions span { color: var(--iq-muted); font-size: 10px; font-weight: 800; }
+  .featured-badge {
+    position: absolute;
+    z-index: 3;
+    top: 14px;
+    left: 14px;
+    padding: 7px 9px;
+    border: 1px solid rgba(255,71,157,.45);
+    border-radius: 5px;
+    background: #151216;
+    color: #ff8cc3;
+    font-size: 9px;
+    font-weight: 950;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .featured-explanation { margin: 10px 0 0; color: #ff8cc3; font-size: 11px; font-weight: 850; }
+  .knowledge-score {
+    display: grid;
+    gap: 3px;
+    margin: 16px 0;
+    padding: 16px;
+    border: 1px solid rgba(255,71,157,.4);
+    border-radius: 8px;
+    background: rgba(255,71,157,.08);
+    text-align: left;
+  }
+  .knowledge-score span { color: #ff8cc3; font-size: 10px; font-weight: 950; letter-spacing: .1em; text-transform: uppercase; }
+  .knowledge-score strong { color: #fff; font-size: 28px; }
+  .knowledge-score small { color: var(--iq-muted); }
+  .collection { margin: 16px 0; text-align: left; }
+  .collection-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; font-size: 12px; }
+  .collection-heading span { color: var(--iq-muted); font-size: 10px; font-weight: 800; }
+  .collection-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; }
+  .collection-card { display: flex; align-items: center; gap: 9px; padding: 9px; border: 1px solid var(--iq-border); border-radius: 7px; background: var(--iq-bg); color: var(--iq-ink); text-decoration: none; }
+  .collection-card img { width: 30px; height: 30px; object-fit: contain; border-radius: 7px; background: #d8d3d6; }
+  .collection-card span, .collection-card strong, .collection-card small { display: block; min-width: 0; }
+  .collection-card strong { overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+  .collection-card small { margin-top: 2px; color: var(--iq-muted); font-size: 9px; }
   .next, .restart, .start-button, .share { border-radius: 7px; background: var(--iq-pink); color: #160b11; }
   .secondary { background: #242025; color: #d8cfd5; }
   .rank { border: 1px solid rgba(255,71,157,.35); border-radius: 4px; background: rgba(255,71,157,.09); color: #ff8cc3; }
@@ -464,6 +502,7 @@ const styles = `
     .logo-wrap { height: 190px; border-radius: 18px; }
     .result-actions { flex-direction: column; }
     .share-links { grid-template-columns: repeat(2, 1fr); }
+    .collection-grid { grid-template-columns: 1fr; }
     .knowledge-actions { align-items: flex-start; flex-direction: column; }
     .result-hero { grid-template-columns: 92px 1fr; gap: 12px; }
     .accuracy-ring { width: 92px; height: 92px; box-shadow: inset 0 0 0 10px #100e10; }
@@ -493,7 +532,7 @@ class IqTokenQuiz extends HTMLElement {
     this.timer = null;
     this.answered = false;
     this.endedByTimeout = false;
-    this.lifelines = { fifty: true, glimpse: true, nameCue: true };
+    this.lifelines = { fifty: true, glimpse: true, wikiClue: true };
     this.tokens = FALLBACK_TOKENS.map((token, index) => ({
       ...token,
       rank: index + 1,
@@ -501,6 +540,9 @@ class IqTokenQuiz extends HTMLElement {
     }));
     this.dataSource = "preview";
     this.onStartScreen = false;
+    this.discovered = [];
+    this.featuredToken = null;
+    this.featuredAwarded = false;
   }
 
   connectedCallback() {
@@ -554,9 +596,14 @@ class IqTokenQuiz extends HTMLElement {
     this.responseTimes = [];
     this.answerHistory = [];
     this.endedByTimeout = false;
-    this.lifelines = { fifty: true, glimpse: true, nameCue: true };
+    this.discovered = [];
+    this.featuredAwarded = false;
+    this.lifelines = { fifty: true, glimpse: true, wikiClue: true };
     this.onStartScreen = false;
-    this.deck = this.buildDeck();
+    this.featuredToken = this.getDailyFeatured();
+    this.deck = this.buildDeck().filter((token) => token.wiki !== this.featuredToken.wiki);
+    const featuredIndex = Math.min(this.deck.length, Math.max(0, Math.floor(Math.min(this.runLength, 10) / 2)));
+    this.deck.splice(featuredIndex, 0, this.featuredToken);
     this.renderQuestion();
   }
 
@@ -579,6 +626,17 @@ class IqTokenQuiz extends HTMLElement {
     return cuts.flatMap((end, index) =>
       this.shuffle(pool.slice(index ? cuts[index - 1] : 0, end))
     );
+  }
+
+  getDailyFeatured() {
+    const day = new Date().toISOString().slice(0, 10);
+    const hash = [...day].reduce((total, character) => ((total * 31) + character.charCodeAt(0)) >>> 0, 0);
+    const pool = this.getTokenPool();
+    return pool[hash % pool.length];
+  }
+
+  isFeaturedBonusAvailable(token) {
+    return Boolean(this.featuredToken && token.wiki === this.featuredToken.wiki && !this.featuredAwarded);
   }
 
   renderStart() {
@@ -688,6 +746,7 @@ class IqTokenQuiz extends HTMLElement {
         </div>
         <div class="timer"><strong data-time>${seconds}s</strong><div class="timer-track"><span data-timebar style="width:100%"></span></div></div>
         <div class="logo-wrap">
+          ${this.isFeaturedBonusAvailable(answer) ? `<span class="featured-badge">Daily Featured Wiki · 2× points</span>` : ""}
           <div class="logo-window ${this.difficulty}" style="--window-size:${progression.windowSize}px;--logo-size:${progression.logoSize}px;--window-radius:${Math.max(8, Math.round(progression.windowSize * .2))}px">
             <img src="${this.imageUrl(answer)}" alt="Mystery token logo" style="--crop-x:${cropX}px;--crop-y:${cropY}px">
             <span class="logo-fallback">?</span>
@@ -699,7 +758,7 @@ class IqTokenQuiz extends HTMLElement {
         <div class="tools">
           <button class="tool" data-fifty ${!this.lifelines.fifty || this.score < FIFTY_COST ? `disabled title="${this.lifelines.fifty ? `Earn ${FIFTY_COST} points to unlock` : "Already used this level"}"` : ""}>50:50 (-${FIFTY_COST})</button>
           ${this.difficulty === "easy" ? "" : `<button class="tool" data-glimpse ${!this.lifelines.glimpse || this.score < GLIMPSE_COST ? `disabled title="${this.lifelines.glimpse ? `Earn ${GLIMPSE_COST} points to unlock` : "Already used this level"}"` : ""}>Logo glimpse (-${GLIMPSE_COST})</button>`}
-          <button class="tool" data-name-cue ${!this.lifelines.nameCue || this.score < NAME_CUE_COST ? `disabled title="${this.lifelines.nameCue ? `Earn ${NAME_CUE_COST} points to unlock` : "Already used this level"}"` : ""}>Name cue (-${NAME_CUE_COST})</button>
+          <button class="tool" data-wiki-clue ${!this.lifelines.wikiClue || this.score < WIKI_CLUE_COST ? `disabled title="${this.lifelines.wikiClue ? `Earn ${WIKI_CLUE_COST} points to unlock` : "Already used this level"}"` : ""}>Wiki clue (-${WIKI_CLUE_COST})</button>
         </div>
         <div class="clue" data-cluebox hidden></div>
         <div class="choices">
@@ -722,7 +781,7 @@ class IqTokenQuiz extends HTMLElement {
     });
     this.shadowRoot.querySelector("[data-fifty]").addEventListener("click", () => this.useFifty(answer));
     this.shadowRoot.querySelector("[data-glimpse]")?.addEventListener("click", () => this.useGlimpse());
-    this.shadowRoot.querySelector("[data-name-cue]").addEventListener("click", () => this.useNameCue(answer, choices));
+    this.shadowRoot.querySelector("[data-wiki-clue]").addEventListener("click", () => this.useWikiClue(answer));
     this.shadowRoot.querySelector(".next").addEventListener("click", () => this.next());
     this.shadowRoot.querySelector(".quit").addEventListener("click", () => this.renderResult());
     const quiz = this.shadowRoot.querySelector(".quiz");
@@ -770,27 +829,25 @@ class IqTokenQuiz extends HTMLElement {
     this.shadowRoot.querySelector("[data-fifty]").disabled = true;
   }
 
-  getNameCue(answer, choices) {
-    const details = choices.map((token) => ({
-      token,
-      words: token.name.trim().split(/\s+/).length,
-      characters: token.name.replace(/[^a-z0-9]/gi, "").length,
-    }));
-    const answerDetails = details.find(({ token }) => token.symbol === answer.symbol);
-    const sameShape = details.filter(({ words }) => (words === 1) === (answerDetails.words === 1));
+  isGenericDescription(description) {
+    return !description || /crypto project documented by the IQ\.wiki community|world's largest blockchain/i.test(description);
+  }
 
-    if (sameShape.length >= 2 && sameShape.length < choices.length) {
-      return answerDetails.words === 1
-        ? "Its name is a single word, shared by multiple options"
-        : "Its name uses multiple words, shared by multiple options";
+  getWikiClue(token) {
+    let clue = token.description || token.hint || "";
+    if (this.isGenericDescription(clue)) {
+      const upperRank = Math.max(50, Math.ceil(token.rank / 50) * 50);
+      return `This IQ.wiki project is categorized as ${token.category} and sits within the top ${upperRank} ranked projects.`;
     }
-
-    const nearest = details
-      .filter(({ token }) => token.symbol !== answer.symbol)
-      .sort((a, b) => Math.abs(a.characters - answerDetails.characters) - Math.abs(b.characters - answerDetails.characters))[0];
-    const lower = Math.max(1, Math.min(answerDetails.characters, nearest.characters) - 2);
-    const upper = Math.max(answerDetails.characters, nearest.characters) + 2;
-    return `Its name falls in the broad ${lower}–${upper} character range`;
+    [token.name, token.symbol]
+      .filter(Boolean)
+      .sort((a, b) => b.length - a.length)
+      .forEach((value) => {
+        const escaped = value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        clue = clue.replace(new RegExp(escaped, "gi"), value === token.symbol ? "its token" : "This project");
+      });
+    const sentence = clue.match(/^.*?[.!?](?:\s|$)/)?.[0] || clue;
+    return sentence.length > 190 ? `${sentence.slice(0, 187).trim()}...` : sentence.trim();
   }
 
   getComboLabel() {
@@ -817,14 +874,14 @@ class IqTokenQuiz extends HTMLElement {
     setTimeout(() => logo?.isConnected && logo.classList.remove("glimpse"), 1600);
   }
 
-  useNameCue(answer, choices) {
-    if (!this.lifelines.nameCue || this.answered || this.score < NAME_CUE_COST) return;
-    this.lifelines.nameCue = false;
-    this.score -= NAME_CUE_COST;
+  useWikiClue(answer) {
+    if (!this.lifelines.wikiClue || this.answered || this.score < WIKI_CLUE_COST) return;
+    this.lifelines.wikiClue = false;
+    this.score -= WIKI_CLUE_COST;
     this.shadowRoot.querySelector(".score").textContent = this.score;
-    this.shadowRoot.querySelector("[data-name-cue]").disabled = true;
+    this.shadowRoot.querySelector("[data-wiki-clue]").disabled = true;
     const clue = this.shadowRoot.querySelector("[data-cluebox]");
-    clue.textContent = `Name cue · ${this.getNameCue(answer, choices)}`;
+    clue.textContent = `From its IQ.wiki · ${this.getWikiClue(answer)}`;
     clue.hidden = false;
   }
 
@@ -843,13 +900,17 @@ class IqTokenQuiz extends HTMLElement {
       if (button.dataset.symbol === answer.symbol) button.classList.add("correct");
     });
     this.shadowRoot.querySelectorAll(".tool").forEach((button) => { button.disabled = true; });
+    const featured = correct && this.isFeaturedBonusAvailable(answer);
 
     if (correct) {
       this.streak += 1;
       this.bestStreak = Math.max(this.bestStreak, this.streak);
       this.correctAnswers += 1;
-      const awarded = DIFFICULTIES[this.difficulty].points + Math.max(0, this.streak - 1) * 25 + this.timeLeft * 10;
+      const baseAward = DIFFICULTIES[this.difficulty].points + Math.max(0, this.streak - 1) * 25 + this.timeLeft * 10;
+      const awarded = featured ? baseAward * 2 : baseAward;
+      if (featured) this.featuredAwarded = true;
       this.score += awarded;
+      this.rememberLearnedProject(answer);
       const pop = document.createElement("span");
       pop.className = "score-pop";
       pop.textContent = `+${awarded}`;
@@ -869,9 +930,10 @@ class IqTokenQuiz extends HTMLElement {
     const description = this.getEducationalDescription(answer);
     this.shadowRoot.querySelector(".feedback").innerHTML = `
       <div class="answer-state ${correct ? "is-correct" : "is-wrong"}">
-        <span class="answer-label">${answerLabel}${combo ? ` · ${combo}` : ""}</span>
+        <span class="answer-label">${answerLabel}${combo ? ` · ${combo}` : ""}${featured ? " · Daily Featured Wiki 2×" : ""}</span>
         <strong>${answer.name} <small>${answer.symbol}</small></strong>
         <p>${description}</p>
+        ${featured ? `<div class="featured-explanation">Today's featured wiki awarded double points.</div>` : ""}
         <div class="knowledge-actions">
           <a href="https://iq.wiki/wiki/${answer.wiki}" target="_blank" rel="noopener noreferrer">Read on IQ.wiki ↗</a>
           <span>${answer.category} · Ranked #${answer.rank}</span>
@@ -893,7 +955,7 @@ class IqTokenQuiz extends HTMLElement {
     this.stopTimer();
     this.question += 1;
     if (this.question < this.runLength) {
-      this.lifelines = { fifty: true, glimpse: true, nameCue: true };
+      this.lifelines = { fifty: true, glimpse: true, wikiClue: true };
       this.renderQuestion();
     } else {
       this.renderResult();
@@ -907,6 +969,10 @@ class IqTokenQuiz extends HTMLElement {
     const maxBaseScore = levelsPlayed * DIFFICULTIES[this.difficulty].points;
     const percentage = levelsPlayed ? Math.round((this.correctAnswers / levelsPlayed) * 100) : 0;
     const average = levelsPlayed ? (this.responseTimes.reduce((sum, time) => sum + time, 0) / levelsPlayed).toFixed(1) : "0.0";
+    const discoveredProjects = this.discovered.length;
+    const discoveredCategories = new Set(this.discovered.map((token) => token.category)).size;
+    const knowledgeScore = discoveredProjects * 100 + discoveredCategories * 50;
+    const learnedProjects = this.getLearnedProjects();
     const storageKey = `iq-token-quiz-best-${this.difficulty}`;
     const previousBest = Number(localStorage.getItem(storageKey) || 0);
     const best = Math.max(previousBest, this.score);
@@ -938,6 +1004,24 @@ class IqTokenQuiz extends HTMLElement {
             <div class="stat"><strong>${this.bestStreak}</strong><span>Best streak</span></div>
             <div class="stat"><strong>${average}s</strong><span>Avg. answer</span></div>
           </div>
+          <div class="knowledge-score">
+            <span>Knowledge score</span>
+            <strong>${knowledgeScore}</strong>
+            <small>${discoveredProjects} projects · ${discoveredCategories} categories discovered this run</small>
+          </div>
+          ${learnedProjects.length ? `
+            <div class="collection">
+              <div class="collection-heading"><strong>Learned Projects Collection</strong><span>${learnedProjects.length} collected</span></div>
+              <div class="collection-grid">
+                ${learnedProjects.slice(0, 8).map((project) => `
+                  <a class="collection-card" href="https://iq.wiki/wiki/${project.wiki}" target="_blank" rel="noopener noreferrer">
+                    <img src="${project.image}" alt="">
+                    <span><strong>${project.name}</strong><small>${project.category}</small></span>
+                  </a>
+                `).join("")}
+              </div>
+            </div>
+          ` : ""}
           ${this.missed.length ? `<div class="review"><strong>Review missed tokens on IQ.wiki</strong>${this.missed.map((token) => `<a href="https://iq.wiki/wiki/${token.wiki}" target="_blank" rel="noopener noreferrer">${token.name} →</a>`).join("")}</div>` : ""}
           <p class="sub">Fast answers and streaks can push your score above ${maxBaseScore}.</p>
           <div class="challenge-card">
@@ -962,7 +1046,7 @@ class IqTokenQuiz extends HTMLElement {
     this.shadowRoot.querySelector(".copy-share").addEventListener("click", () => this.copyChallenge(percentage));
     this.dispatchEvent(new CustomEvent("token-quiz-complete", {
       bubbles: true,
-      detail: { score: this.score, levels: levelsPlayed, difficulty: this.difficulty, category: this.category },
+      detail: { score: this.score, levels: levelsPlayed, difficulty: this.difficulty, category: this.category, knowledgeScore, discoveredProjects, discoveredCategories },
     }));
   }
 
@@ -972,7 +1056,42 @@ class IqTokenQuiz extends HTMLElement {
   }
 
   getEducationalDescription(token) {
-    return token.description || token.hint || `Read the IQ.wiki article to learn what ${token.name} does.`;
+    const description = token.description || token.hint || "";
+    if (this.isGenericDescription(description)) {
+      return `${token.name} is categorized as ${token.category} on IQ.wiki and appears around rank #${token.rank}. Open its wiki for the full project overview.`;
+    }
+    return description;
+  }
+
+  getLearnedProjects() {
+    try {
+      const projects = JSON.parse(localStorage.getItem("iq-token-quiz-learned") || "[]");
+      return Array.isArray(projects) ? projects : [];
+    } catch {
+      return [];
+    }
+  }
+
+  rememberLearnedProject(token) {
+    const id = token.wiki || token.symbol;
+    if (!this.discovered.some((project) => (project.wiki || project.symbol) === id)) {
+      this.discovered.push(token);
+    }
+
+    const saved = this.getLearnedProjects().filter((project) => (project.wiki || project.symbol) !== id);
+    saved.unshift({
+      name: token.name,
+      symbol: token.symbol,
+      image: this.imageUrl(token),
+      wiki: token.wiki,
+      category: token.category,
+    });
+
+    try {
+      localStorage.setItem("iq-token-quiz-learned", JSON.stringify(saved.slice(0, 100)));
+    } catch {
+      // The current run still tracks discoveries when storage is unavailable.
+    }
   }
 
   async copyChallenge(percentage) {
