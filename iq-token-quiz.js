@@ -17,8 +17,8 @@ const FALLBACK_TOKENS = [
 ];
 const TOKEN_POOL_SIZE = 500;
 const FIFTY_COST = 50;
-const GLIMPSE_COST = 100;
-const WIKI_CLUE_COST = 150;
+const GLIMPSE_COST = 150;
+const WIKI_CLUE_COST = 100;
 const TOKEN_DATA_URL = new URL("tokens.json", document.currentScript?.src || window.location.href).href;
 
 const DIFFICULTIES = {
