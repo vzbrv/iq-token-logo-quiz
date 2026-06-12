@@ -756,7 +756,7 @@ class IqTokenQuiz extends HTMLElement {
         <p class="sub">Use keys 1–${choices.length}, or trust your cursor.</p>
         <div class="tools">
           <button class="tool" data-fifty ${!this.lifelines.fifty || this.score < FIFTY_COST ? `disabled title="${this.lifelines.fifty ? `Earn ${FIFTY_COST} points to unlock` : "Already used this level"}"` : ""}>50:50 (-${FIFTY_COST})</button>
-          <button class="tool" data-glimpse ${!this.lifelines.glimpse || this.score < GLIMPSE_COST ? `disabled title="${this.lifelines.glimpse ? `Earn ${GLIMPSE_COST} points to unlock` : "Already used this level"}"` : ""}>Logo glimpse (-${GLIMPSE_COST})</button>
+          ${this.difficulty === "easy" ? "" : `<button class="tool" data-glimpse ${!this.lifelines.glimpse || this.score < GLIMPSE_COST ? `disabled title="${this.lifelines.glimpse ? `Earn ${GLIMPSE_COST} points to unlock` : "Already used this level"}"` : ""}>Logo glimpse (-${GLIMPSE_COST})</button>`}
           <button class="tool" data-wiki-clue ${!this.lifelines.wikiClue || this.score < WIKI_CLUE_COST ? `disabled title="${this.lifelines.wikiClue ? `Earn ${WIKI_CLUE_COST} points to unlock` : "Already used this level"}"` : ""}>Wiki clue (-${WIKI_CLUE_COST})</button>
         </div>
         <div class="clue" data-cluebox hidden></div>
