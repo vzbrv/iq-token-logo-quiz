@@ -345,6 +345,96 @@ const styles = `
   .logo-window.revealed { animation: revealPulse .7s ease; }
   .secondary { margin-top: 8px; background: var(--iq-pink-soft); color: var(--iq-pink-dark); }
   .quit { width: 100%; margin-top: 9px; background: transparent; color: var(--iq-muted); font-size: 12px; font-weight: 800; }
+
+  /* Dark knowledge arena */
+  :host {
+    --iq-pink: #ff479d;
+    --iq-pink-dark: #ff75b6;
+    --iq-pink-soft: rgba(255,71,157,.1);
+    --iq-ink: #f7f2f5;
+    --iq-muted: #aaa1a8;
+    --iq-border: #332d32;
+    --iq-bg: #151216;
+    max-width: 680px;
+  }
+  .quiz {
+    padding: 28px;
+    border: 1px solid #383137;
+    border-radius: 20px;
+    background: linear-gradient(145deg, rgba(29,24,28,.98), rgba(11,10,12,.98));
+    box-shadow: 0 30px 90px rgba(0,0,0,.5), inset 0 1px rgba(255,255,255,.05);
+  }
+  .quiz::before { background: var(--iq-pink); opacity: .18; }
+  .eyebrow { color: #ff75b6; }
+  .live { border-radius: 5px; background: #100e10; }
+  .live::before { background: #51e5a4; box-shadow: 0 0 12px #51e5a4; }
+  .hud-item, .choice, .tool, .level, .round, .category, .share-link {
+    border-color: #393238;
+    background: rgba(255,255,255,.035);
+  }
+  .hud-item { border-radius: 7px; }
+  .hud-item strong { color: #fff; font-variant-numeric: tabular-nums; }
+  .timer-track { height: 4px; background: #332d32; }
+  .logo-wrap {
+    height: 250px;
+    border: 1px solid #3b3037;
+    border-radius: 12px;
+    background: radial-gradient(circle at center, rgba(255,71,157,.14), transparent 32%), linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px), #080709;
+    background-size: auto, 22px 22px, 22px 22px, auto;
+  }
+  .logo-wrap::before, .logo-wrap::after { border-color: rgba(255,71,157,.35); }
+  .logo-reveal { border-radius: 5px; background: #151216; }
+  h2 { font-size: 34px; }
+  .choice { border-radius: 8px; color: #f7f2f5; }
+  .choice:hover:not(:disabled), .level:hover, .round:hover, .level.selected, .round.selected, .category:hover, .category.selected {
+    border-color: var(--iq-pink);
+    background: rgba(255,71,157,.11);
+    box-shadow: 0 0 0 1px rgba(255,71,157,.14), 0 12px 28px rgba(0,0,0,.2);
+  }
+  .key { border-radius: 4px; background: #272228; }
+  .choice.correct { border-color: #51e5a4; background: rgba(81,229,164,.09); color: #8ff3c5; }
+  .choice.wrong { border-color: #ff6c78; background: rgba(255,108,120,.09); color: #ff9ea6; }
+  .tool { color: #ff8cc3; }
+  .clue { border: 1px solid rgba(255,71,157,.3); border-radius: 6px; }
+  .feedback { min-height: 0; }
+  .answer-state {
+    margin-top: 16px;
+    padding: 18px;
+    border: 1px solid #393238;
+    border-left: 3px solid #ff6c78;
+    border-radius: 8px;
+    background: #111013;
+    text-align: left;
+  }
+  .answer-state.is-correct { border-left-color: #51e5a4; }
+  .answer-label { display: block; margin-bottom: 7px; color: #ff9ea6; font-size: 10px; font-weight: 950; letter-spacing: .14em; text-transform: uppercase; }
+  .is-correct .answer-label { color: #8ff3c5; }
+  .answer-state strong { display: block; color: #fff; font-size: 22px; letter-spacing: -.035em; }
+  .answer-state strong small { color: var(--iq-muted); font-size: 11px; letter-spacing: .04em; }
+  .answer-state p { margin: 8px 0 14px; color: #c8bec5; font-size: 13px; line-height: 1.55; }
+  .knowledge-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 12px; border-top: 1px solid #2c272b; }
+  .knowledge-actions a { margin: 0; padding: 8px 11px; border-radius: 5px; background: var(--iq-pink); color: #160b11; font-size: 11px; }
+  .knowledge-actions span { color: var(--iq-muted); font-size: 10px; font-weight: 800; }
+  .next, .restart, .start-button, .share { border-radius: 7px; background: var(--iq-pink); color: #160b11; }
+  .secondary { background: #242025; color: #d8cfd5; }
+  .rank { border: 1px solid rgba(255,71,157,.35); border-radius: 4px; background: rgba(255,71,157,.09); color: #ff8cc3; }
+  .accuracy-ring { background: conic-gradient(var(--iq-pink) calc(var(--accuracy) * 1%), #292329 0); box-shadow: inset 0 0 0 12px #100e10; }
+  .stat, .review { border: 1px solid #352e34; border-radius: 7px; background: #151216; }
+  .challenge-card {
+    margin: 20px 0 12px;
+    padding: 20px;
+    border: 1px solid rgba(255,71,157,.45);
+    border-radius: 10px;
+    background: radial-gradient(circle at 90% 0, rgba(255,71,157,.18), transparent 42%), #100e10;
+    text-align: left;
+  }
+  .challenge-card strong { display: block; margin: 8px 0 4px; color: #fff; font-size: 21px; line-height: 1.15; letter-spacing: -.035em; }
+  .challenge-card p { margin: 0 0 15px; color: #ff8cc3; font-size: 14px; font-weight: 850; }
+  .challenge-card .share-links { margin: 0; }
+  .share-link { color: #e8dfe4; }
+  .start h2 { font-size: 44px; }
+  .level, .round { border-radius: 7px; }
+  .category { border-radius: 5px; }
   @keyframes orbit { to { transform: rotate(360deg); } }
   @keyframes glimpsePulse {
     0%, 100% { box-shadow: 0 0 0 0 rgba(255,92,168,0); }
@@ -363,8 +453,9 @@ const styles = `
     .logo-wrap { height: 190px; border-radius: 18px; }
     .result-actions { flex-direction: column; }
     .share-links { grid-template-columns: repeat(2, 1fr); }
+    .knowledge-actions { align-items: flex-start; flex-direction: column; }
     .result-hero { grid-template-columns: 92px 1fr; gap: 12px; }
-    .accuracy-ring { width: 92px; height: 92px; box-shadow: inset 0 0 0 10px #fff; }
+    .accuracy-ring { width: 92px; height: 92px; box-shadow: inset 0 0 0 10px #100e10; }
   }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -487,8 +578,8 @@ class IqTokenQuiz extends HTMLElement {
       <section class="quiz" aria-label="Choose token logo quiz difficulty">
         <div class="start">
           <div class="top"><p class="eyebrow">IQ.wiki Token Logo Quiz</p><span class="live">${this.dataSource === "live" ? "Live" : "Preview"} · ${this.tokens.length} projects</span></div>
-          <h2>500 logos. How dialed in are you?</h2>
-          <p class="sub">Identify crypto projects before time runs out. Partial logos, faster stages, streak bonuses, and two lifelines stand between you and the leaderboard.</p>
+          <h2>How deep does your crypto knowledge go?</h2>
+          <p class="sub">Identify IQ.wiki projects before time runs out. The logo window shrinks, the clock accelerates, and every answer teaches you something.</p>
           <p class="section-label">Pick difficulty</p>
           <div class="levels">
             ${Object.entries(DIFFICULTIES).map(([key, level]) => `
@@ -733,11 +824,18 @@ class IqTokenQuiz extends HTMLElement {
     this.shadowRoot.querySelector(".logo-wrap").classList.add("answered");
     this.shadowRoot.querySelector(".logo-window").classList.add("revealed");
     const combo = this.getComboLabel();
-    this.shadowRoot.querySelector(".feedback").innerHTML = correct
-      ? `<strong>Correct${this.streak > 1 ? ` · ${this.streak} answer streak` : ""}.</strong>${combo ? `<span class="combo">${combo}</span>` : ""}
-         <div class="knowledge"><span>${answer.category} · Ranked #${answer.rank} in this IQ.wiki project set</span><a href="https://iq.wiki/wiki/${answer.wiki}" target="_blank" rel="noopener noreferrer">Explore ${answer.name} on IQ.wiki →</a></div>`
-      : `<strong>${timedOut ? "Time is up." : "Not quite."} That is ${answer.name} (${answer.symbol}).</strong>
-         <div class="knowledge"><span>${answer.category} · Ranked #${answer.rank} in this IQ.wiki project set</span><a href="https://iq.wiki/wiki/${answer.wiki}" target="_blank" rel="noopener noreferrer">Learn about ${answer.name} on IQ.wiki →</a></div>`;
+    const answerLabel = correct ? `Correct${this.streak > 1 ? ` · ${this.streak} answer streak` : ""}` : timedOut ? "Time is up" : "Not quite";
+    const description = this.getEducationalDescription(answer);
+    this.shadowRoot.querySelector(".feedback").innerHTML = `
+      <div class="answer-state ${correct ? "is-correct" : "is-wrong"}">
+        <span class="answer-label">${answerLabel}${combo ? ` · ${combo}` : ""}</span>
+        <strong>${answer.name} <small>${answer.symbol}</small></strong>
+        <p>${description}</p>
+        <div class="knowledge-actions">
+          <a href="https://iq.wiki/wiki/${answer.wiki}" target="_blank" rel="noopener noreferrer">Read on IQ.wiki ↗</a>
+          <span>${answer.category} · Ranked #${answer.rank}</span>
+        </div>
+      </div>`;
     this.shadowRoot.querySelector(".next").hidden = timedOut;
 
     this.dispatchEvent(new CustomEvent("token-quiz-answer", {
@@ -801,15 +899,19 @@ class IqTokenQuiz extends HTMLElement {
           </div>
           ${this.missed.length ? `<div class="review"><strong>Review missed tokens on IQ.wiki</strong>${this.missed.map((token) => `<a href="https://iq.wiki/wiki/${token.wiki}" target="_blank" rel="noopener noreferrer">${token.name} →</a>`).join("")}</div>` : ""}
           <p class="sub">Fast answers and streaks can push your score above ${maxBaseScore}.</p>
-          <p class="share-label">Challenge your friends</p>
-          <div class="share-links">
-            <a class="share-link" href="https://twitter.com/intent/tweet?text=${encodedShareText}&url=${shareUrl}" target="_blank" rel="noopener noreferrer">X</a>
-            <a class="share-link" href="https://t.me/share/url?url=${shareUrl}&text=${encodedShareText}" target="_blank" rel="noopener noreferrer">Telegram</a>
-            <a class="share-link" href="https://wa.me/?text=${encodedShareText}%20${shareUrl}" target="_blank" rel="noopener noreferrer">WhatsApp</a>
-            <button class="share-link copy-share">Copy link</button>
+          <div class="challenge-card">
+            <p class="eyebrow">Challenge issued</p>
+            <strong>I scored ${this.correctAnswers}/${levelsPlayed} on IQ Token Logo Quiz.</strong>
+            <p>Can you beat me?</p>
+            <div class="share-links">
+              <a class="share-link" href="https://twitter.com/intent/tweet?text=${encodedShareText}&url=${shareUrl}" target="_blank" rel="noopener noreferrer">Share on X</a>
+              <a class="share-link" href="https://t.me/share/url?url=${shareUrl}&text=${encodedShareText}" target="_blank" rel="noopener noreferrer">Telegram</a>
+              <a class="share-link" href="https://wa.me/?text=${encodedShareText}%20${shareUrl}" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+              <button class="share-link copy-share">Copy link</button>
+            </div>
           </div>
           <div class="result-actions">
-            <button class="share">More sharing options</button>
+            <button class="share">Challenge a friend</button>
             <button class="restart">Play again</button>
           </div>
           <button class="restart secondary">Change mode</button>
@@ -829,7 +931,23 @@ class IqTokenQuiz extends HTMLElement {
 
   getShareText(percentage) {
     const grid = this.answerHistory.slice(-10).map((correct) => correct ? "🟩" : "🟥").join("");
-    return `I reached Level ${this.responseTimes.length} in ${this.category} · ${DIFFICULTIES[this.difficulty].label} and scored ${this.score} points in the IQ.wiki Token Logo Quiz (${percentage}% accuracy).\n${grid}\nCan you beat my score?`;
+    return `I scored ${this.correctAnswers}/${this.responseTimes.length} on the IQ.wiki Token Logo Quiz (${this.score} points · ${percentage}% accuracy).\n${grid}\nCan you beat me?`;
+  }
+
+  getEducationalDescription(token) {
+    if (token.hint) return token.hint;
+    const descriptions = {
+      "AI": `${token.name} connects artificial intelligence with crypto and blockchain technology.`,
+      "DeFi": `${token.name} is part of decentralized finance, where financial tools operate through blockchain protocols.`,
+      "Infrastructure": `${token.name} provides infrastructure that helps blockchain applications and networks operate.`,
+      "Layer 1": `${token.name} is a layer 1 blockchain with its own base network for transactions and applications.`,
+      "Meme": `${token.name} is a community-driven meme token tracked by IQ.wiki.`,
+      "Payments": `${token.name} focuses on transferring value and enabling blockchain-based payments.`,
+      "Privacy": `${token.name} is a crypto project focused on privacy and protecting transaction information.`,
+      "Stablecoins": `${token.name} is designed to maintain a more stable value than typical cryptocurrencies.`,
+      "Web3": `${token.name} helps build a more open internet using tokens and blockchain technology.`,
+    };
+    return descriptions[token.category] || `${token.name} is a crypto project documented by the IQ.wiki community.`;
   }
 
   async copyChallenge(percentage) {
