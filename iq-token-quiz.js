@@ -296,7 +296,7 @@ const styles = `
   .result-actions { align-items: stretch; }
   .result-actions button { flex: 1; }
   .share-label { margin: 18px 0 8px; color: var(--iq-muted); font-size: 10px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
-  .share-links { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-bottom: 10px; }
+  .share-links { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; margin-bottom: 10px; }
   .share-link {
     padding: 11px 6px;
     border: 1px solid var(--iq-border);
@@ -905,8 +905,6 @@ class IqTokenQuiz extends HTMLElement {
             <p>Can you beat me?</p>
             <div class="share-links">
               <a class="share-link" href="https://twitter.com/intent/tweet?text=${encodedShareText}&url=${shareUrl}" target="_blank" rel="noopener noreferrer">Share on X</a>
-              <a class="share-link" href="https://t.me/share/url?url=${shareUrl}&text=${encodedShareText}" target="_blank" rel="noopener noreferrer">Telegram</a>
-              <a class="share-link" href="https://wa.me/?text=${encodedShareText}%20${shareUrl}" target="_blank" rel="noopener noreferrer">WhatsApp</a>
               <button class="share-link copy-share">Copy link</button>
             </div>
           </div>
