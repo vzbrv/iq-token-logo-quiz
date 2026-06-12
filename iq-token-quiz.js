@@ -341,14 +341,13 @@ const styles = `
     display: grid;
     overflow: hidden;
     place-items: center;
-    background-color: #d8d3d6;
-    background-image: linear-gradient(45deg, #f7f4f6 25%, transparent 25%, transparent 75%, #f7f4f6 75%), linear-gradient(45deg, #f7f4f6 25%, transparent 25%, transparent 75%, #f7f4f6 75%);
-    background-position: 0 0, 8px 8px;
-    background-size: 16px 16px;
+    border: 1px solid rgba(255,255,255,.22);
+    background: radial-gradient(circle at 38% 30%, #f1edf0, #aaa2a8 78%);
+    box-shadow: inset 0 1px rgba(255,255,255,.45), 0 10px 28px rgba(0,0,0,.28);
   }
   .logo-window { width: var(--window-size); height: var(--window-size); border-radius: var(--window-radius); }
   .logo-window, .logo-window img { transition: width .28s ease, height .28s ease, border-radius .28s ease, transform .28s ease; }
-  .logo-window img { position: absolute; max-width: none; filter: drop-shadow(0 1px 2px rgba(0,0,0,.42)); transform: translate(var(--crop-x), var(--crop-y)); }
+  .logo-window img { position: absolute; max-width: none; filter: drop-shadow(0 1px 2px rgba(0,0,0,.55)) drop-shadow(0 0 1px rgba(255,255,255,.65)); transform: translate(var(--crop-x), var(--crop-y)); }
   .logo-window img { top: 0; left: 0; width: var(--logo-size); height: var(--logo-size); }
   .logo-window.glimpse, .logo-window.revealed { width: 104px; height: 104px; border-radius: 22px; }
   .logo-window.glimpse { animation: glimpsePulse 1.6s ease; }
@@ -460,7 +459,7 @@ const styles = `
   .collection-heading span { color: var(--iq-muted); font-size: 10px; font-weight: 800; }
   .collection-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; }
   .collection-card { display: flex; align-items: center; gap: 9px; padding: 9px; border: 1px solid var(--iq-border); border-radius: 7px; background: var(--iq-bg); color: var(--iq-ink); text-decoration: none; }
-  .collection-card img { width: 30px; height: 30px; object-fit: contain; border-radius: 7px; background: #d8d3d6; }
+  .collection-card img { width: 30px; height: 30px; object-fit: contain; border-radius: 7px; background: #c9c2c7; }
   .collection-card span, .collection-card strong, .collection-card small { display: block; min-width: 0; }
   .collection-card strong { overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
   .collection-card small { margin-top: 2px; color: var(--iq-muted); font-size: 9px; }
@@ -757,7 +756,7 @@ class IqTokenQuiz extends HTMLElement {
         <p class="sub">Use keys 1–${choices.length}, or trust your cursor.</p>
         <div class="tools">
           <button class="tool" data-fifty ${!this.lifelines.fifty || this.score < FIFTY_COST ? `disabled title="${this.lifelines.fifty ? `Earn ${FIFTY_COST} points to unlock` : "Already used this level"}"` : ""}>50:50 (-${FIFTY_COST})</button>
-          ${this.difficulty === "easy" ? "" : `<button class="tool" data-glimpse ${!this.lifelines.glimpse || this.score < GLIMPSE_COST ? `disabled title="${this.lifelines.glimpse ? `Earn ${GLIMPSE_COST} points to unlock` : "Already used this level"}"` : ""}>Logo glimpse (-${GLIMPSE_COST})</button>`}
+          <button class="tool" data-glimpse ${!this.lifelines.glimpse || this.score < GLIMPSE_COST ? `disabled title="${this.lifelines.glimpse ? `Earn ${GLIMPSE_COST} points to unlock` : "Already used this level"}"` : ""}>Logo glimpse (-${GLIMPSE_COST})</button>
           <button class="tool" data-wiki-clue ${!this.lifelines.wikiClue || this.score < WIKI_CLUE_COST ? `disabled title="${this.lifelines.wikiClue ? `Earn ${WIKI_CLUE_COST} points to unlock` : "Already used this level"}"` : ""}>Wiki clue (-${WIKI_CLUE_COST})</button>
         </div>
         <div class="clue" data-cluebox hidden></div>
